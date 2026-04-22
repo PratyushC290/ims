@@ -4,6 +4,78 @@ import nodemailer from "nodemailer";
 import { User } from "../models/User.js";
 import { Otp } from "../models/OTP.js";
 
+export const signupAdmin = async (req, res) => {
+  try {
+    const { fullname, instituteEmail, phoneNumber, avatar } = req.body;
+
+    let existingUser = await User.findOne({ instituteEmail });
+
+    if (existingUser) {
+      if (
+        existingUser.role === "Admin" ||
+        existingUser.role === "Super Admin"
+      ) {
+        return res.status(400).json({
+          message: "This account is already an administrator.",
+        });
+      }
+
+      // If they already asked for an upgrade and are waiting.
+      if (existingUser.accountStatus === "Pending") {
+        return res.status(400).json({
+          message:
+            "An admin request for this account is already pending approval.",
+        });
+      }
+
+      existingUser.role = "Admin";
+      existingUser.accountStatus = "Pending";
+      existingUser.phoneNumber = phoneNumber;
+      if (avatar) existingUser.avatar = avatar;
+
+      await existingUser.save();
+
+      return res.status(200).json({
+        message:
+          "Upgrade request submitted! Your account is pending Super Admin approval.",
+        user: {
+          fullname: existingUser.fullname,
+          email: existingUser.instituteEmail,
+          status: existingUser.accountStatus,
+        },
+      });
+    }
+
+    const newUser = await User.create({
+      fullname,
+      instituteEmail,
+      phoneNumber,
+      avatar: avatar || "https://default-avatar-url.com/image.png",
+      role: "Admin",
+    });
+
+    res.status(201).json({
+      message:
+        "Sign up successful! Your account is pending Super Admin approval.",
+      user: {
+        fullname: newUser.fullname,
+        email: newUser.instituteEmail,
+        status: newUser.accountStatus,
+      },
+    });
+  } catch (error) {
+    if (error.code === 11000 && error.keyPattern?.phoneNumber) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "This phone number is already registered to another account.",
+        });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const sendOtpEmail = async (email, otpCode) => {
   const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE,
@@ -30,6 +102,18 @@ export const requestOtp = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.accountStatus === "Pending") {
+      return res.status(403).json({
+        message: "Your account is still pending Super Admin approval.",
+      });
+    }
+
+    if (user.accountStatus === "Rejected") {
+      return res
+        .status(403)
+        .json({ message: "Your account request was rejected." });
     }
 
     if (user.role !== "Admin" && user.role !== "Super Admin") {
@@ -77,7 +161,7 @@ export const verifyOtp = async (req, res) => {
 
     if (validOtp.otpCode !== otpCode) {
       validOtp.attempts += 1;
-      await validOtp.save(); 
+      await validOtp.save();
 
       const remaining = 5 - validOtp.attempts;
       return res.status(400).json({
@@ -86,6 +170,18 @@ export const verifyOtp = async (req, res) => {
     }
 
     const user = await User.findOne({ instituteEmail: email });
+
+    if (user.accountStatus === "Pending") {
+      return res.status(403).json({
+        message: "Your account is still pending Super Admin approval.",
+      });
+    }
+
+    if (user.accountStatus === "Rejected") {
+      return res
+        .status(403)
+        .json({ message: "Your account request was rejected." });
+    }
 
     if (user.role !== "Admin" && user.role !== "Super Admin") {
       return res.status(403).json({

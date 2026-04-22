@@ -29,6 +29,11 @@ const userSchema = new Schema(
       required: true,
       unique: true,
     },
+    accountStatus: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Pending",
+    },
   },
   {
     timestamps: true,
