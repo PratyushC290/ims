@@ -64,7 +64,6 @@ export const getAllItems = async (req, res) => {
   }
 };
 
-// 3. Assign an item (Atomic)
 export const assignItem = async (req, res) => {
   try {
     const { itemId } = req.params;
@@ -97,7 +96,6 @@ export const assignItem = async (req, res) => {
   }
 };
 
-// 4. Return an item (Atomic)
 export const returnItem = async (req, res) => {
   try {
     const { itemId } = req.params;
