@@ -1,6 +1,10 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { requestOtp, signupAdmin, verifyOtp } from "../controllers/auth.controller.js";
+import {
+  requestOtp,
+  verifyOtp,
+  signupAdmin,
+} from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
@@ -15,8 +19,11 @@ const otpLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// POST /api/auth/signup
 router.post("/signup", signupAdmin);
+// POST /api/auth/request-otp
 router.post("/request-otp", requestOtp);
+// POST /api/auth/verify-otp
 router.post("/verify-otp", otpLimiter, verifyOtp);
 
 export default router;
