@@ -17,7 +17,6 @@ const itemSchema = new Schema(
       required: true,
       unique: true,
       trim: true,
-      index: true,
     },
     status: {
       type: String,
@@ -34,5 +33,12 @@ const itemSchema = new Schema(
     timestamps: true,
   },
 );
+
+itemSchema.index({ name: "text", identifier: "text" });
+
+itemSchema.index({ status: 1 });
+itemSchema.index({ category: 1 });
+itemSchema.index({ assignedTo: 1 });
+itemSchema.index({ createdAt: -1 });
 
 export const Item = mongoose.model("Item", itemSchema);

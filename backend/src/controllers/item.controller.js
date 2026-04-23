@@ -4,18 +4,12 @@ import { User } from "../models/User.js";
 export const createItem = async (req, res) => {
   try {
     const { name, category, identifier } = req.body;
-    const existingItem = await Item.findOne({ identifier });
-    if (existingItem) {
-      return res
-        .status(400)
-        .json({ message: "An item with this identifier already exists." });
-    }
-
     const newItem = await Item.create({
       name,
       category,
       identifier,
       status: "Available",
+      assignedTo: null,
     });
 
     res.status(201).json({
@@ -23,6 +17,11 @@ export const createItem = async (req, res) => {
       item: newItem,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res
+        .status(400)
+        .json({ message: "An item with this identifier already exists." });
+    }
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -32,17 +31,14 @@ export const getAllItems = async (req, res) => {
     const { status, category, search } = req.query;
 
     const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.max(1, Number(req.query.limit) || 20);
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
     let query = {};
     if (status) query.status = status;
     if (category) query.category = category;
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { identifier: { $regex: search, $options: "i" } },
-      ];
+      query.$text = { $search: search };
     }
 
     const [items, totalItems] = await Promise.all([
@@ -51,7 +47,6 @@ export const getAllItems = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-
       Item.countDocuments(query),
     ]);
 
@@ -69,30 +64,29 @@ export const getAllItems = async (req, res) => {
   }
 };
 
+// 3. Assign an item (Atomic)
 export const assignItem = async (req, res) => {
   try {
     const { itemId } = req.params;
     const { userId } = req.body;
-
-    const item = await Item.findById(itemId);
-    if (!item) {
-      return res.status(404).json({ message: "Item not found." });
-    }
-
-    if (item.status !== "Available") {
-      return res.status(400).json({
-        message: `Item cannot be assigned. Current status: ${item.status}`,
-      });
-    }
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    item.assignedTo = user._id;
-    item.status = "Assigned";
-    await item.save();
+    const item = await Item.findOneAndUpdate(
+      { _id: itemId, status: "Available" },
+      { status: "Assigned", assignedTo: user._id },
+      { new: true },
+    ).populate("assignedTo", "fullname instituteEmail role");
+
+    if (!item) {
+      return res.status(400).json({
+        message:
+          "Item cannot be assigned. It may not exist, or it has already been assigned.",
+      });
+    }
 
     res.status(200).json({
       message: `${item.name} has been successfully assigned to ${user.fullname}.`,
@@ -103,24 +97,23 @@ export const assignItem = async (req, res) => {
   }
 };
 
+// 4. Return an item (Atomic)
 export const returnItem = async (req, res) => {
   try {
     const { itemId } = req.params;
 
-    const item = await Item.findById(itemId);
+    const item = await Item.findOneAndUpdate(
+      { _id: itemId, status: "Assigned" },
+      { status: "Available", assignedTo: null },
+      { new: true },
+    );
+
     if (!item) {
-      return res.status(404).json({ message: "Item not found." });
+      return res.status(400).json({
+        message:
+          "Item cannot be returned. It is not currently assigned to anyone.",
+      });
     }
-
-    if (item.status !== "Assigned") {
-      return res
-        .status(400)
-        .json({ message: "This item is not currently assigned to anyone." });
-    }
-
-    item.assignedTo = null;
-    item.status = "Available";
-    await item.save();
 
     res.status(200).json({
       message: `${item.name} has been returned to the inventory.`,
@@ -141,25 +134,30 @@ export const createBulkItems = async (req, res) => {
         .json({ message: "Please provide an array of items." });
     }
 
-    const identifiers = items.map((item) => item.identifier);
-    const existingItems = await Item.find({ identifier: { $in: identifiers } });
+    const formattedItems = items.map((item) => ({
+      name: item.name,
+      category: item.category,
+      identifier: item.identifier,
+      status: "Available",
+      assignedTo: null,
+    }));
 
-    if (existingItems.length > 0) {
-      const duplicates = existingItems
-        .map((item) => item.identifier)
-        .join(", ");
-      return res.status(400).json({
-        message: `Bulk upload failed. These identifiers already exist in the system: ${duplicates}`,
-      });
-    }
-
-    const insertedItems = await Item.insertMany(items);
+    const insertedItems = await Item.insertMany(formattedItems, {
+      ordered: false,
+    });
 
     res.status(201).json({
       message: `Successfully added ${insertedItems.length} items to the inventory.`,
       count: insertedItems.length,
     });
   } catch (error) {
+    if (error.code === 11000 && error.result && error.result.nInserted > 0) {
+      return res.status(207).json({
+        message: `Partial success. Added ${error.result.nInserted} items. Some identifiers already existed and were skipped.`,
+        count: error.result.nInserted,
+      });
+    }
+
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
