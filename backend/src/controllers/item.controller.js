@@ -1,5 +1,6 @@
 import { Item } from "../models/Item.js";
 import { User } from "../models/User.js";
+import { History } from "../models/History.js";
 
 export const createItem = async (req, res) => {
   try {
@@ -87,6 +88,13 @@ export const assignItem = async (req, res) => {
       });
     }
 
+    await History.create({
+      item: item._id,
+      action: "Assigned",
+      targetUser: user._id,
+      authorizedBy: req.user.userId,
+    });
+
     res.status(200).json({
       message: `${item.name} has been successfully assigned to ${user.fullname}.`,
       item,
@@ -112,6 +120,13 @@ export const returnItem = async (req, res) => {
           "Item cannot be returned. It is not currently assigned to anyone.",
       });
     }
+
+    await History.create({
+      item: item._id,
+      action: "Returned",
+      targetUser: previousOwner,
+      authorizedBy: req.user.userId,
+    });
 
     res.status(200).json({
       message: `${item.name} has been returned to the inventory.`,
@@ -156,6 +171,33 @@ export const createBulkItems = async (req, res) => {
       });
     }
 
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const toggleMaintenance = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const item = await Item.findById(itemId);
+
+    if (!item) {
+      return res.status(404).json({ message: "Item not found." });
+    }
+
+    if (item.status === "Under Maintenance") {
+      item.status = "Available";
+    } else {
+      item.status = "Under Maintenance";
+      item.assignedTo = null; 
+    }
+
+    await item.save();
+
+    res.status(200).json({ 
+      message: `${item.name} is now ${item.status}.`,
+      item
+    });
+  } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -19,4 +19,7 @@ router.get("/requests", getPendingRequests);
 //PUT /api/admin/requests/:userId
 router.put("/requests/:userId", reviewUserRequest);
 
+// PUT /api/admin/users/:userId/role
+router.put("/users/:userId/role", changeUserRole);
+
 export default router;
