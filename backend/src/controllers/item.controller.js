@@ -90,7 +90,6 @@ export const assignItem = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Update the item
     item.assignedTo = user._id;
     item.status = "Assigned";
     await item.save();
@@ -134,7 +133,6 @@ export const returnItem = async (req, res) => {
 
 export const createBulkItems = async (req, res) => {
   try {
-    // Expects an array of items from the frontend
     const { items } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
