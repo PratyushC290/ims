@@ -5,6 +5,7 @@ import {
   assignItem,
   returnItem,
   createBulkItems,
+  toggleMaintenance,
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 

@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  changeUserRole,
   getPendingRequests,
   reviewUserRequest,
 } from "../controllers/admin.controller.js";
