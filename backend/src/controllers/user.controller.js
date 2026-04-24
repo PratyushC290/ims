@@ -64,3 +64,50 @@ export const getUserById = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const manuallyAddUser = async (req, res) => {
+  try {
+    const { fullname, instituteEmail, phoneNumber, role } = req.body;
+
+    if (!fullname || !instituteEmail || !phoneNumber || !role) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const validRoles = ["Student", "Faculty", "Staff", "Admin"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role selected." });
+    }
+
+    const existingEmail = await User.findOne({ instituteEmail: instituteEmail.toLowerCase() });
+    if (existingEmail) {
+      return res.status(400).json({ message: "A user with this email already exists." });
+    }
+
+    const existingPhone = await User.findOne({ phoneNumber });
+    if (existingPhone) {
+      return res.status(400).json({ message: "A user with this phone number already exists." });
+    }
+
+    const newUser = await User.create({
+      fullname,
+      instituteEmail: instituteEmail.toLowerCase(),
+      phoneNumber,
+      role,
+      accountStatus: "Approved",
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullname)}&background=random`,
+    });
+
+    res.status(201).json({
+      message: `User ${fullname} has been added successfully.`,
+      user: {
+        _id: newUser._id,
+        fullname: newUser.fullname,
+        instituteEmail: newUser.instituteEmail,
+        role: newUser.role,
+        accountStatus: newUser.accountStatus,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

@@ -10,6 +10,8 @@ import {
   Loader2,
   MoreVertical,
   Search,
+  UserPlus,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -18,6 +20,14 @@ import Pagination from "../components/Pagination";
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    fullname: "",
+    instituteEmail: "",
+    phoneNumber: "",
+    role: "Student",
+  });
+  const [isCreating, setIsCreating] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState("Admin");
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
@@ -98,6 +108,27 @@ const Users = () => {
     }
   };
 
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    if (!newUser.fullname || !newUser.instituteEmail || !newUser.phoneNumber || !newUser.role) {
+      toast.error("All fields are required.");
+      return;
+    }
+
+    try {
+      setIsCreating(true);
+      await api.post("/users/add", newUser);
+      toast.success(`User ${newUser.fullname} has been added successfully.`);
+      setIsAddModalOpen(false);
+      setNewUser({ fullname: "", instituteEmail: "", phoneNumber: "", role: "Student" });
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to add user.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -119,21 +150,31 @@ const Users = () => {
           </p>
         </div>
 
-        {/* Visual indicator of your current power level */}
-        <div
-          className={`px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium border
-          ${
-            currentUserRole === "Super Admin"
-              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-              : "bg-blue-50 text-blue-700 border-blue-200"
-          }`}
-        >
-          {currentUserRole === "Super Admin" ? (
-            <ShieldAlert className="h-4 w-4" />
-          ) : (
-            <ShieldCheck className="h-4 w-4" />
-          )}
-          Logged in as: {currentUserRole}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#1C1C1E] text-white text-sm font-medium rounded-xl hover:bg-black transition-colors shadow-sm"
+          >
+            <UserPlus className="h-4 w-4" />
+            Add User
+          </button>
+
+          {/* Visual indicator of your current power level */}
+          <div
+            className={`px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium border
+            ${
+              currentUserRole === "Super Admin"
+                ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                : "bg-blue-50 text-blue-700 border-blue-200"
+            }`}
+          >
+            {currentUserRole === "Super Admin" ? (
+              <ShieldAlert className="h-4 w-4" />
+            ) : (
+              <ShieldCheck className="h-4 w-4" />
+            )}
+            Logged in as: {currentUserRole}
+          </div>
         </div>
       </div>
 
@@ -281,6 +322,103 @@ const Users = () => {
 
         <Pagination pagination={pagination} onPageChange={setPage} onLimitChange={handleLimitChange} loading={loading} />
       </div>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-white relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mb-6">
+              <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 border border-blue-100">
+                <UserPlus className="h-6 w-6" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Add New User</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Manually add a new user to the system.
+              </p>
+            </div>
+
+            <form onSubmit={handleAddUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="John Doe"
+                  value={newUser.fullname}
+                  onChange={(e) => setNewUser({ ...newUser, fullname: e.target.value })}
+                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Institute Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="john.doe@institute.edu"
+                  value={newUser.instituteEmail}
+                  onChange={(e) => setNewUser({ ...newUser, instituteEmail: e.target.value })}
+                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="+1 234 567 8900"
+                  value={newUser.phoneNumber}
+                  onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
+                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                >
+                  <option value="Student">Student</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Faculty">Faculty</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50"
+                >
+                  {isCreating ? "Creating..." : "Create User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
