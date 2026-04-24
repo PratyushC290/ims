@@ -108,13 +108,13 @@ export const returnItem = async (req, res) => {
   try {
     const { itemId } = req.params;
 
-    const item = await Item.findOneAndUpdate(
+    const oldItem = await Item.findOneAndUpdate(
       { _id: itemId, status: "Assigned" },
       { status: "Available", assignedTo: null },
-      { new: true },
+      { new: false },
     );
 
-    if (!item) {
+    if (!oldItem) {
       return res.status(400).json({
         message:
           "Item cannot be returned. It is not currently assigned to anyone.",
@@ -122,15 +122,17 @@ export const returnItem = async (req, res) => {
     }
 
     await History.create({
-      item: item._id,
+      item: oldItem._id,
       action: "Returned",
-      targetUser: previousOwner,
+      targetUser: oldItem.assignedTo,
       authorizedBy: req.user.userId,
     });
 
+    const updatedItem = await Item.findById(itemId);
+
     res.status(200).json({
-      message: `${item.name} has been returned to the inventory.`,
-      item,
+      message: `${updatedItem.name} has been returned to the inventory.`,
+      item: updatedItem,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -188,14 +190,14 @@ export const toggleMaintenance = async (req, res) => {
       item.status = "Available";
     } else {
       item.status = "Under Maintenance";
-      item.assignedTo = null; 
+      item.assignedTo = null;
     }
 
     await item.save();
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: `${item.name} is now ${item.status}.`,
-      item
+      item,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
