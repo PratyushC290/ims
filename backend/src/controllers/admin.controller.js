@@ -1,4 +1,6 @@
 import { User } from "../models/User.js";
+import { Notification } from "../models/Notification.js";
+import { Item } from "../models/Item.js";
 
 export const getPendingRequests = async (req, res) => {
   try {
@@ -29,7 +31,30 @@ export const reviewUserRequest = async (req, res) => {
     user.accountStatus = status;
     await user.save();
 
-    //maybe use nodemailer here to email the user saying "You are approved!"
+    if (status === "Approved") {
+      const remainingPending = await User.countDocuments({
+        accountStatus: "Pending",
+      });
+      const adminUsers = await User.find({
+        role: { $in: ["Admin", "Super Admin"] },
+      });
+
+      for (const admin of adminUsers) {
+        if (remainingPending > 0) {
+          await Notification.findOneAndUpdate(
+            { recipient: admin._id, type: "pendingUser", isRead: false },
+            {
+              message: `${remainingPending} user ${remainingPending === 1 ? "request" : "requests"} waiting for approval.`,
+            },
+          );
+        } else {
+          await Notification.deleteMany({
+            recipient: admin._id,
+            type: "pendingUser",
+          });
+        }
+      }
+    }
 
     res.status(200).json({
       message: `User ${user.fullname} has been ${status.toLowerCase()}.`,
@@ -52,8 +77,8 @@ export const changeUserRole = async (req, res) => {
     user.role = role;
     await user.save();
 
-    res.status(200).json({ 
-      message: `${user.fullname} is now a ${role} and can no longer log into the admin dashboard.` 
+    res.status(200).json({
+      message: `${user.fullname} is now a ${role} and can no longer log into the admin dashboard.`,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

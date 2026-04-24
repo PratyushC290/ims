@@ -36,3 +36,13 @@ export const superAdminOnly = (req, res, next) => {
       .json({ message: "Access Denied. Super Admin privileges required." });
   }
 };
+
+export const adminOnly = (req, res, next) => {
+  if (req.user && ["Admin", "Super Admin"].includes(req.user.role)) {
+    next();
+  } else {
+    res
+      .status(403)
+      .json({ message: "Access Denied. Admin privileges required." });
+  }
+};

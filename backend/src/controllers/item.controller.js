@@ -1,6 +1,7 @@
 import { Item } from "../models/Item.js";
 import { User } from "../models/User.js";
 import { History } from "../models/History.js";
+import { Notification } from "../models/Notification.js";
 
 export const createItem = async (req, res) => {
   try {
@@ -39,7 +40,10 @@ export const getAllItems = async (req, res) => {
     if (status) query.status = status;
     if (category) query.category = category;
     if (search) {
-      query.$text = { $search: search };
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { identifier: { $regex: search, $options: "i" } },
+      ];
     }
 
     const [items, totalItems] = await Promise.all([
@@ -194,6 +198,20 @@ export const toggleMaintenance = async (req, res) => {
     }
 
     await item.save();
+
+    const maintenanceCount = await Item.countDocuments({ status: "Under Maintenance" });
+    const adminUsers = await User.find({ role: { $in: ["Admin", "Super Admin"] } });
+    
+    for (const admin of adminUsers) {
+      if (maintenanceCount > 0) {
+        await Notification.findOneAndUpdate(
+          { recipient: admin._id, type: "maintenanceAlert", isRead: false },
+          { message: `${maintenanceCount} item${maintenanceCount === 1 ? " is" : "s are"} currently under maintenance.` }
+        );
+      } else {
+        await Notification.deleteMany({ recipient: admin._id, type: "maintenanceAlert" });
+      }
+    }
 
     res.status(200).json({
       message: `${item.name} is now ${item.status}.`,
