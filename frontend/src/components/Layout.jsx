@@ -6,6 +6,7 @@ import {
   LogOut,
   Bell,
   CheckCheck,
+  History,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
@@ -18,7 +19,6 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // The navigation links for the sidebar
   const navItems = [
     { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
     {
@@ -27,6 +27,7 @@ const Layout = () => {
       icon: MonitorSmartphone,
     },
     { name: "Directory", path: "/dashboard/users", icon: Users },
+    { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
   ];
 
   const handleLogout = () => {
@@ -37,12 +38,51 @@ const Layout = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await api.get("/notifications");
-      setNotifications(response.data.notifications);
-      setUnreadCount(response.data.unreadCount);
+      const [notifRes, historyRes] = await Promise.all([
+        api.get("/notifications"),
+        api.get("/history/latest"),
+      ]);
+
+      const adminNotifs = notifRes.data.notifications || [];
+      const recentActivity = historyRes.data.logs || [];
+
+      setUnreadCount(notifRes.data.unreadCount || 0);
+
+      const activityNotifications = recentActivity.map((log) => ({
+        _id: log._id,
+        type: "activity",
+        title: formatActivityTitle(log),
+        message: formatActivityMessage(log),
+        createdAt: log.createdAt,
+        isRead: false,
+      }));
+
+      setNotifications([...activityNotifications, ...adminNotifs]);
     } catch {
       console.error("Failed to fetch notifications");
     }
+  };
+
+  const formatActivityTitle = (log) => {
+    const action = log.action || "";
+    return action.charAt(0).toUpperCase() + action.slice(1).toLowerCase();
+  };
+
+  const formatActivityMessage = (log) => {
+    const itemName = log.item?.name || "Unknown Item";
+    const userName = log.targetUser?.fullname || "Unknown User";
+    const action = log.action || "";
+
+    if (action === "Assigned") {
+      return `${itemName} assigned to ${userName}`;
+    } else if (action === "Returned") {
+      return `${itemName} returned by ${userName}`;
+    } else if (action === "Sent to Maintenance") {
+      return `${itemName} sent for maintenance`;
+    } else if (action === "Removed from Maintenance") {
+      return `${itemName} removed from maintenance`;
+    }
+    return `${itemName} - ${action}`;
   };
 
   useEffect(() => {
@@ -52,6 +92,7 @@ const Layout = () => {
     loadNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const markAllAsRead = async () => {
@@ -71,6 +112,8 @@ const Layout = () => {
         return "bg-blue-500";
       case "maintenanceAlert":
         return "bg-amber-500";
+      case "activity":
+        return "bg-green-500";
       default:
         return "bg-gray-500";
     }

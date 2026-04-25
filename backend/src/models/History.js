@@ -15,6 +15,7 @@ const historySchema = new Schema(
         "Assigned",
         "Returned",
         "Sent to Maintenance",
+        "Removed from Maintenance",
         "Retired",
       ],
       required: true,

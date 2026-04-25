@@ -16,6 +16,22 @@ export const getItemHistory = async (req, res) => {
   }
 };
 
+export const getLatestActivity = async (req, res) => {
+  try {
+    const logs = await History.find()
+      .populate("item", "name identifier")
+      .populate("targetUser", "fullname")
+      .populate("authorizedBy", "fullname")
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    res.status(200).json({ logs });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 export const getGlobalAuditLog = async (req, res) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);

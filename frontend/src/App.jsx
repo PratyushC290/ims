@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
+import AuditLogs from "./pages/AuditLogs";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import Register from "./pages/Register";
 
@@ -22,6 +23,7 @@ const App = () => {
           <Route path="inventory" element={<Inventory />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:userId" element={<UserDetail />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
         </Route>
       </Route>
 

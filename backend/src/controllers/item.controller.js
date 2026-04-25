@@ -183,41 +183,57 @@ export const createBulkItems = async (req, res) => {
 
 export const toggleMaintenance = async (req, res) => {
   try {
-    const { itemId } = req.params;
-    const item = await Item.findById(itemId);
+    // FIX 1: Checks for both 'itemId' and 'id' so it won't break regardless of how your router is named
+    const itemId = req.params.itemId || req.params.id;
 
+    const item = await Item.findById(itemId);
     if (!item) {
       return res.status(404).json({ message: "Item not found." });
     }
 
-    if (item.status === "Under Maintenance") {
-      item.status = "Available";
+    const currentStatus = item.status;
+    let newStatus;
+
+    if (currentStatus === "Under Maintenance") {
+      newStatus = "Available";
+    } else if (currentStatus === "Available" || currentStatus === "Assigned") {
+      newStatus = "Under Maintenance";
     } else {
-      item.status = "Under Maintenance";
+      return res
+        .status(400)
+        .json({ message: "Cannot change maintenance status." });
+    }
+
+    // FIX 2: Save who currently has the item BEFORE we wipe it, so we can log it in history!
+    const previousOwner = item.assignedTo;
+
+    item.status = newStatus;
+    if (newStatus === "Under Maintenance") {
       item.assignedTo = null;
     }
 
     await item.save();
 
-    const maintenanceCount = await Item.countDocuments({ status: "Under Maintenance" });
-    const adminUsers = await User.find({ role: { $in: ["Admin", "Super Admin"] } });
-    
-    for (const admin of adminUsers) {
-      if (maintenanceCount > 0) {
-        await Notification.findOneAndUpdate(
-          { recipient: admin._id, type: "maintenanceAlert", isRead: false },
-          { message: `${maintenanceCount} item${maintenanceCount === 1 ? " is" : "s are"} currently under maintenance.` }
-        );
-      } else {
-        await Notification.deleteMany({ recipient: admin._id, type: "maintenanceAlert" });
-      }
-    }
+    const logAction =
+      newStatus === "Under Maintenance"
+        ? "Sent to Maintenance"
+        : "Removed from Maintenance";
+
+    await History.create({
+      item: item._id,
+      action: logAction,
+      // FIX 3: If it broke while someone had it, log them! Otherwise, log null.
+      targetUser: newStatus === "Under Maintenance" ? previousOwner : null,
+      // FIX 4: Fallbacks to ensure the auth ID doesn't crash the history creation
+      authorizedBy: req.user.userId || req.user._id || req.user.id,
+    });
 
     res.status(200).json({
       message: `${item.name} is now ${item.status}.`,
-      item,
+      item: item,
     });
   } catch (error) {
+    console.error("Toggle Maintenance Error:", error); // Will print the exact crash in your terminal
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

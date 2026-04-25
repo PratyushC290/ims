@@ -61,7 +61,7 @@ const Inventory = () => {
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.identifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchTerm.toLowerCase())
+      item.category.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   useEffect(() => {
@@ -73,7 +73,7 @@ const Inventory = () => {
     .filter(
       (u) =>
         u.fullname.toLowerCase().includes(userSearch.toLowerCase()) ||
-        u.instituteEmail.toLowerCase().includes(userSearch.toLowerCase())
+        u.instituteEmail.toLowerCase().includes(userSearch.toLowerCase()),
     );
 
   const handleAddSubmit = async (e) => {
@@ -124,20 +124,30 @@ const Inventory = () => {
     }
   };
 
+  // --- THE CORRECTED MAINTENANCE FUNCTION ---
   const handleMaintenance = async (item) => {
-    const actionText =
-      item.status === "Under Maintenance"
-        ? "mark as repaired"
-        : "send to maintenance";
+    const isFixing = item.status === "Under Maintenance";
+    const actionText = isFixing ? "mark as repaired" : "send to maintenance";
+
     if (!window.confirm(`Are you sure you want to ${actionText} this item?`))
       return;
 
     try {
-      await api.put(`/items/${item._id}/maintenance`);
-      toast.success(`Maintenance status updated.`);
+      const targetStatus = isFixing ? "Available" : "Under Maintenance";
+
+      // Passing the targetStatus in the request body
+      await api.put(`/items/${item._id}/maintenance`, {
+        status: targetStatus,
+      });
+
+      toast.success(
+        isFixing ? "Item repaired and available!" : "Item sent to maintenance.",
+      );
       fetchData();
     } catch (error) {
-      toast.error("Failed to update maintenance status");
+      toast.error(
+        error.response?.data?.message || "Failed to update maintenance status",
+      );
     }
   };
 
@@ -225,90 +235,97 @@ const Inventory = () => {
                 </tr>
               ) : (
                 filteredItems.map((item) => (
-                <tr
-                  key={item._id}
-                  className="hover:bg-white/40 transition-colors"
-                >
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 shadow-sm">
-                        <MonitorSmartphone className="h-5 w-5 text-gray-600" />
+                  <tr
+                    key={item._id}
+                    className="hover:bg-white/40 transition-colors"
+                  >
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 shadow-sm">
+                          <MonitorSmartphone className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <span className="font-medium text-gray-900">
+                          {item.name}
+                        </span>
                       </div>
-                      <span className="font-medium text-gray-900">
-                        {item.name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-sm font-mono text-gray-500">
-                    {item.identifier}
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-600">
-                    {item.category}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
+                    </td>
+                    <td className="py-4 px-6 text-sm font-mono text-gray-500">
+                      {item.identifier}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-600">
+                      {item.category}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
                       ${item.status === "Available" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}
                       ${item.status === "Assigned" ? "bg-blue-50 text-blue-700 border-blue-200" : ""}
                       ${item.status === "Under Maintenance" ? "bg-amber-50 text-amber-700 border-amber-200" : ""}
                     `}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-700">
-                    {item.assignedTo ? (
-                      item.assignedTo.fullname
-                    ) : (
-                      <span className="text-gray-400 italic">Unassigned</span>
-                    )}
-                  </td>
-
-                  <td className="py-4 px-6 text-right space-x-2">
-                    {item.status === "Available" && (
-                      <button
-                        onClick={() => {
-                          setSelectedItem(item);
-                          setIsAssignModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
                       >
-                        <UserPlus className="h-4 w-4" /> Assign
-                      </button>
-                    )}
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-700">
+                      {item.assignedTo ? (
+                        item.assignedTo.fullname
+                      ) : (
+                        <span className="text-gray-400 italic">Unassigned</span>
+                      )}
+                    </td>
 
-                    {item.status === "Assigned" && (
+                    <td className="py-4 px-6 text-right space-x-2">
+                      {item.status === "Available" && (
+                        <button
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setIsAssignModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
+                        >
+                          <UserPlus className="h-4 w-4" /> Assign
+                        </button>
+                      )}
+
+                      {item.status === "Assigned" && (
+                        <button
+                          onClick={() => handleReturn(item)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+                        >
+                          <RotateCcw className="h-4 w-4" /> Return
+                        </button>
+                      )}
+
                       <button
-                        onClick={() => handleReturn(item)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
-                      >
-                        <RotateCcw className="h-4 w-4" /> Return
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => handleMaintenance(item)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors border
+                        onClick={() => handleMaintenance(item)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors border
                         ${
                           item.status === "Under Maintenance"
                             ? "text-gray-700 bg-gray-50 hover:bg-gray-100 border-gray-200"
                             : "text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200"
                         }
                       `}
-                    >
-                      <Wrench className="h-4 w-4" />
-                      {item.status === "Under Maintenance" ? "Fix" : "Maint"}
-                    </button>
-                  </td>
-                </tr>
-              )))}
+                      >
+                        <Wrench className="h-4 w-4" />
+                        {item.status === "Under Maintenance" ? "Fix" : "Maint"}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        <Pagination pagination={pagination} onPageChange={setPage} onLimitChange={handleLimitChange} loading={loading} />
+        <Pagination
+          pagination={pagination}
+          onPageChange={setPage}
+          onLimitChange={handleLimitChange}
+          loading={loading}
+        />
       </div>
 
+      {/* ASSIGN MODAL */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 backdrop-blur-sm">
           <div className="bg-white rounded-4xl shadow-2xl max-w-md w-full p-8 border border-white relative animate-in fade-in zoom-in duration-200">
@@ -413,6 +430,8 @@ const Inventory = () => {
           </div>
         </div>
       )}
+
+      {/* ADD ASSET MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 backdrop-blur-sm">
           <div className="bg-white rounded-4xl shadow-2xl max-w-md w-full p-8 border border-white relative animate-in fade-in zoom-in duration-200">
