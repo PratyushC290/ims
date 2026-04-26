@@ -1,8 +1,13 @@
 import { Item } from "../models/Item.js";
+import streamifier from "streamifier";
 import { User } from "../models/User.js";
 import { History } from "../models/History.js";
 import { Notification } from "../models/Notification.js";
 import { ActionLog } from "../models/ActionLog.js";
+import { cloudinary } from "../config/cloudinary.js";
+
+// helper function to safely pipe memory directly to cloudinary
+
 
 export const createItem = async (req, res) => {
   try {
@@ -20,9 +25,7 @@ export const createItem = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res
-        .status(400)
-        .json({ message: "An item with this identifier already exists." });
+      return res.status(400).json({ message: "An item with this identifier already exists." });
     }
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -40,9 +43,7 @@ export const getAllItems = async (req, res) => {
     if (status) query.status = status;
     if (folder !== undefined) query.folder = folder === "null" ? null : folder;
     if (search) {
-      query.$or = [
-        { identifier: { $regex: search, $options: "i" } },
-      ];
+      query.$or = [{ identifier: { $regex: search, $options: "i" } }];
     }
 
     const [items, totalItems] = await Promise.all([
@@ -71,12 +72,10 @@ export const getAllItems = async (req, res) => {
 export const assignItem = async (req, res) => {
   try {
     const { itemId } = req.params;
-    const { userId } = req.body;
+    const { userId, notes, image } = req.body;
 
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
+    if (!user) return res.status(404).json({ message: "User not found." });
 
     const item = await Item.findOneAndUpdate(
       { _id: itemId, status: "Available" },
@@ -84,24 +83,24 @@ export const assignItem = async (req, res) => {
       { new: true },
     ).populate("assignedTo", "fullname instituteEmail role");
 
-    if (!item) {
-      return res.status(400).json({
-        message:
-          "Item cannot be assigned. It may not exist, or it has already been assigned.",
-      });
+    if (!item) return res.status(400).json({ message: "Item cannot be assigned." });
+
+    let imageUrl = null;
+    if (image) {
+      const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
+      imageUrl = uploadResult.secure_url;
     }
 
     await History.create({
       item: item._id,
       action: "Assigned",
       targetUser: user._id,
-      authorizedBy: req.user.userId,
+      authorizedBy: req.user.userId || req.user._id || req.user.id,
+      image: imageUrl,
+      notes: notes || ""
     });
 
-    res.status(200).json({
-      message: `Asset ${item.identifier} has been successfully assigned to ${user.fullname}.`,
-      item,
-    });
+    res.status(200).json({ message: `Asset assigned to ${user.fullname}.`, item });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -110,7 +109,7 @@ export const assignItem = async (req, res) => {
 export const returnItem = async (req, res) => {
   try {
     const { itemId } = req.params;
-    const { image } = req.body;
+    const { notes, image } = req.body;
 
     const oldItem = await Item.findOneAndUpdate(
       { _id: itemId, status: "Assigned" },
@@ -118,32 +117,79 @@ export const returnItem = async (req, res) => {
       { new: false },
     );
 
-    if (!oldItem) {
-      return res.status(400).json({
-        message:
-          "Item cannot be returned. It is not currently assigned to anyone.",
-      });
+    if (!oldItem) return res.status(400).json({ message: "Item cannot be returned." });
+
+    let imageUrl = null;
+    if (image) {
+      const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
+      imageUrl = uploadResult.secure_url;
     }
 
     await History.create({
       item: oldItem._id,
       action: "Returned",
       targetUser: oldItem.assignedTo,
-      authorizedBy: req.user.userId,
-      image: image || null,
+      authorizedBy: req.user.userId || req.user._id || req.user.id,
+      image: imageUrl,
+      notes: notes || ""
     });
 
     const updatedItem = await Item.findById(itemId);
-
-    res.status(200).json({
-      message: `Asset ${updatedItem.identifier} has been returned to the inventory.`,
-      item: updatedItem,
-    });
+    res.status(200).json({ message: `Asset returned.`, item: updatedItem });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+export const toggleMaintenance = async (req, res) => {
+  try {
+    const itemId = req.params.itemId || req.params.id;
+    const { notes, image } = req.body;
+
+    const item = await Item.findById(itemId);
+    if (!item) return res.status(404).json({ message: "Item not found." });
+
+    const currentStatus = item.status;
+    let newStatus;
+
+    if (currentStatus === "Under Maintenance") {
+      newStatus = "Available";
+    } else if (currentStatus === "Available" || currentStatus === "Assigned") {
+      newStatus = "Under Maintenance";
+    } else {
+      return res.status(400).json({ message: "Cannot change maintenance status." });
+    }
+
+    const previousOwner = item.assignedTo;
+    item.status = newStatus;
+    if (newStatus === "Under Maintenance") item.assignedTo = null;
+
+    await item.save();
+
+    const logAction = newStatus === "Under Maintenance" ? "Sent to Maintenance" : "Removed from Maintenance";
+    
+    let imageUrl = null;
+    if (image) {
+      const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
+      imageUrl = uploadResult.secure_url;
+    }
+
+    await History.create({
+      item: item._id,
+      action: logAction,
+      targetUser: newStatus === "Under Maintenance" ? previousOwner : null,
+      authorizedBy: req.user.userId || req.user._id || req.user.id,
+      image: imageUrl,
+      notes: notes || ""
+    });
+
+    res.status(200).json({ message: `Asset is now ${item.status}.`, item });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// RESTORED THE MISSING FUNCTION
 export const createBulkItems = async (req, res) => {
   try {
     const { items } = req.body;
@@ -180,62 +226,6 @@ export const createBulkItems = async (req, res) => {
   }
 };
 
-export const toggleMaintenance = async (req, res) => {
-  try {
-    // FIX 1: Checks for both 'itemId' and 'id' so it won't break regardless of how your router is named
-    const itemId = req.params.itemId || req.params.id;
-
-    const item = await Item.findById(itemId);
-    if (!item) {
-      return res.status(404).json({ message: "Item not found." });
-    }
-
-    const currentStatus = item.status;
-    let newStatus;
-
-    if (currentStatus === "Under Maintenance") {
-      newStatus = "Available";
-    } else if (currentStatus === "Available" || currentStatus === "Assigned") {
-      newStatus = "Under Maintenance";
-    } else {
-      return res
-        .status(400)
-        .json({ message: "Cannot change maintenance status." });
-    }
-
-    // FIX 2: Save who currently has the item BEFORE we wipe it, so we can log it in history!
-    const previousOwner = item.assignedTo;
-
-    item.status = newStatus;
-    if (newStatus === "Under Maintenance") {
-      item.assignedTo = null;
-    }
-
-    await item.save();
-
-    const logAction =
-      newStatus === "Under Maintenance"
-        ? "Sent to Maintenance"
-        : "Removed from Maintenance";
-
-    await History.create({
-      item: item._id,
-      action: logAction,
-      // FIX 3: If it broke while someone had it, log them! Otherwise, log null.
-      targetUser: newStatus === "Under Maintenance" ? previousOwner : null,
-      // FIX 4: Fallbacks to ensure the auth ID doesn't crash the history creation
-      authorizedBy: req.user.userId || req.user._id || req.user.id,
-    });
-
-    res.status(200).json({
-      message: `Asset ${item.identifier} is now ${item.status}.`,
-      item: item,
-    });
-  } catch (error) {
-    console.error("Toggle Maintenance Error:", error); // Will print the exact crash in your terminal
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
 
 export const moveItem = async (req, res) => {
   try {
@@ -297,7 +287,6 @@ export const bulkUnassignFolder = async (req, res) => {
 
     const itemIds = items.map(i => i._id);
     
-    // Store previous states to undo properly
     const previousStates = items.map(i => ({ itemId: i._id, assignedTo: i.assignedTo }));
 
     await Item.updateMany(
@@ -336,7 +325,6 @@ export const undoAction = async (req, res) => {
         { $set: { status: "Available", assignedTo: null } }
       );
     } else if (actionLog.actionType === "BULK_UNASSIGN") {
-      // Reassign to respective users
       const bulkOps = actionLog.previousState.map(state => ({
         updateOne: {
           filter: { _id: state.itemId },

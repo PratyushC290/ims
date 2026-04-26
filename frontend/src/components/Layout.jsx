@@ -1,3 +1,4 @@
+// edited by abhiram parupudi 2401cs21
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -127,15 +128,16 @@ const Layout = () => {
   };
 
   return (
-    // The same premium sky gradient background from the login screen
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-sky-100 via-blue-50 to-white flex">
-      {/* SIDEBAR: Frosted Glass Panel */}
-      <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-white/40 backdrop-blur-xl border-r border-white/80 shadow-[4px_0_24px_rgb(0,0,0,0.02)]">
+    // Dynamic background wrapping the entire screen
+    <div className="min-h-screen bg-[var(--theme-bg)] flex transition-colors duration-300">
+      
+      {/* SIDEBAR */}
+      <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-[var(--theme-panel)] border-r border-[var(--theme-border)] shadow-sm transition-colors duration-300">
         <div className="p-6 flex items-center gap-3">
-          <div className="h-10 w-10 bg-white rounded-xl shadow-sm flex items-center justify-center border border-gray-100">
-            <MonitorSmartphone className="h-5 w-5 text-gray-800" />
+          <div className="h-10 w-10 bg-[var(--theme-bg)] rounded-xl shadow-sm flex items-center justify-center border border-[var(--theme-border)]">
+            <MonitorSmartphone className="h-5 w-5 text-[var(--theme-text)]" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-xl font-bold text-[var(--theme-text)] tracking-tight">
             IMS Portal
           </h1>
         </div>
@@ -151,12 +153,12 @@ const Layout = () => {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                   isActive
-                    ? "bg-white shadow-sm border border-gray-100 text-blue-600"
-                    : "text-gray-600 hover:bg-white/50 hover:text-gray-900"
+                    ? "bg-[var(--theme-bg)] shadow-sm border border-[var(--theme-border)] text-[var(--theme-accent)]"
+                    : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
                 }`}
               >
                 <Icon
-                  className={`h-5 w-5 ${isActive ? "text-blue-600" : "text-gray-500"}`}
+                  className={`h-5 w-5 ${isActive ? "text-[var(--theme-accent)]" : "text-[var(--theme-text-muted)]"}`}
                 />
                 {item.name}
               </Link>
@@ -167,7 +169,7 @@ const Layout = () => {
         <div className="p-4 mt-auto">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors font-medium"
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[var(--theme-text-muted)] hover:bg-red-500/10 hover:text-red-500 transition-colors font-medium"
           >
             <LogOut className="h-5 w-5" />
             Logout
@@ -177,8 +179,9 @@ const Layout = () => {
 
       {/* MAIN CONTENT WRAPPER */}
       <main className="flex-1 ml-64 flex flex-col min-h-screen">
-        {/* TOP HEADER: Frosted Glass */}
-        <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-white/40 backdrop-blur-md border-b border-white/80">
+        
+        {/* TOP HEADER */}
+        <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-[var(--theme-panel)] border-b border-[var(--theme-border)] transition-colors duration-300">
           <div className="flex items-center gap-4">
             <div className="relative">
               <button
@@ -186,24 +189,24 @@ const Layout = () => {
                   setShowNotifications(!showNotifications);
                   if (!showNotifications) fetchNotifications();
                 }}
-                className="p-2.5 bg-white rounded-full shadow-sm border border-gray-100 text-gray-500 hover:text-blue-600 transition-colors relative"
+                className="p-2.5 bg-[var(--theme-bg)] rounded-full shadow-sm border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] transition-colors relative"
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                  <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[var(--theme-bg)]"></span>
                 )}
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-white/90 backdrop-blur-xl border border-white/80 rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-gray-900">
+                <div className="absolute right-0 mt-3 w-80 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-4 border-b border-[var(--theme-border)] flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-[var(--theme-text)]">
                       Notifications
                     </h3>
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllAsRead}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                        className="text-xs text-[var(--theme-accent)] hover:opacity-80 font-medium flex items-center gap-1"
                       >
                         <CheckCheck className="h-3 w-3" />
                         Mark all read
@@ -212,20 +215,20 @@ const Layout = () => {
                   </div>
                   <div className="max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-4 text-sm text-gray-500 text-center">
+                      <div className="p-4 text-sm text-[var(--theme-text-muted)] text-center">
                         Loading...
                       </div>
                     ) : notifications.length === 0 ? (
-                      <div className="p-4 text-sm text-gray-500 text-center">
+                      <div className="p-4 text-sm text-[var(--theme-text-muted)] text-center">
                         No notifications
                       </div>
                     ) : (
-                      <div className="divide-y divide-gray-100/50">
+                      <div className="divide-y divide-[var(--theme-border)]">
                         {notifications.map((notification) => (
                           <div
                             key={notification._id}
-                            className={`p-4 hover:bg-gray-50/50 transition-colors ${
-                              !notification.isRead ? "bg-blue-50/30" : ""
+                            className={`p-4 hover:bg-[var(--theme-bg)] transition-colors ${
+                              !notification.isRead ? "bg-[var(--theme-accent)]/10" : ""
                             }`}
                           >
                             <div className="flex gap-3">
@@ -233,13 +236,13 @@ const Layout = () => {
                                 className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${getNotificationColor(notification.type)}`}
                               ></div>
                               <div>
-                                <p className="text-sm font-medium text-gray-900">
+                                <p className="text-sm font-medium text-[var(--theme-text)]">
                                   {notification.title}
                                 </p>
-                                <p className="text-xs text-gray-600 mt-0.5">
+                                <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
                                   {notification.message}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-1">
+                                <p className="text-xs text-[var(--theme-text-muted)] opacity-70 mt-1">
                                   {new Date(
                                     notification.createdAt,
                                   ).toLocaleDateString()}
@@ -254,13 +257,13 @@ const Layout = () => {
                 </div>
               )}
             </div>
-            <div className="h-10 w-10 rounded-full bg-linear-to-tr from-blue-600 to-indigo-600 shadow-sm border-2 border-white flex items-center justify-center text-white font-bold text-sm">
+            <div className="h-10 w-10 rounded-full bg-blue-600 shadow-sm border-2 border-[var(--theme-panel)] flex items-center justify-center text-white font-bold text-sm">
               A
             </div>
           </div>
         </header>
 
-        {/* PAGE CONTENT: This is where your Dashboard, Inventory, etc. will render */}
+        {/* PAGE CONTENT */}
         <div className="p-8 flex-1">
           <Outlet />
         </div>
@@ -269,22 +272,22 @@ const Layout = () => {
       {/* Logout Confirm Modal */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 relative">
-            <div className="mb-4 inline-flex p-3 rounded-2xl bg-red-100 text-red-600">
+          <div className="bg-[var(--theme-panel)] rounded-3xl shadow-2xl max-w-sm w-full p-6 relative border border-[var(--theme-border)]">
+            <div className="mb-4 inline-flex p-3 rounded-2xl bg-red-500/10 text-red-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Log Out</h2>
-            <p className="text-sm text-gray-500 mb-6">Are you sure you want to log out of your session?</p>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">Log Out</h2>
+            <p className="text-sm text-[var(--theme-text-muted)] mb-6">Are you sure you want to log out of your session?</p>
             <div className="flex gap-3">
               <button 
                 onClick={() => setConfirmModal({ isOpen: false })} 
-                className="flex-1 py-2.5 bg-gray-50 text-gray-700 rounded-xl font-bold border border-gray-200 hover:bg-gray-100"
+                className="flex-1 py-2.5 bg-[var(--theme-bg)] text-[var(--theme-text)] rounded-xl font-bold border border-[var(--theme-border)] hover:bg-[var(--theme-border)] transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={confirmLogout} 
-                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold shadow-sm hover:bg-red-700"
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold shadow-sm hover:bg-red-700 transition-colors"
               >
                 Log Out
               </button>
