@@ -5,10 +5,9 @@ import { Notification } from "../models/Notification.js";
 
 export const createItem = async (req, res) => {
   try {
-    const { name, category, identifier } = req.body;
+    const { itemType, identifier } = req.body;
     const newItem = await Item.create({
-      name,
-      category,
+      itemType,
       identifier,
       status: "Available",
       assignedTo: null,
@@ -30,7 +29,7 @@ export const createItem = async (req, res) => {
 
 export const getAllItems = async (req, res) => {
   try {
-    const { status, category, search } = req.query;
+    const { status, itemType, search } = req.query;
 
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
@@ -38,17 +37,15 @@ export const getAllItems = async (req, res) => {
 
     let query = {};
     if (status) query.status = status;
-    if (category) query.category = category;
+    if (itemType) query.itemType = itemType;
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { identifier: { $regex: search, $options: "i" } },
-      ];
+      query.identifier = { $regex: search, $options: "i" };
     }
 
     const [items, totalItems] = await Promise.all([
       Item.find(query)
         .populate("assignedTo", "fullname instituteEmail role")
+        .populate("itemType", "name category thumbnail")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -154,8 +151,7 @@ export const createBulkItems = async (req, res) => {
     }
 
     const formattedItems = items.map((item) => ({
-      name: item.name,
-      category: item.category,
+      itemType: item.itemType,
       identifier: item.identifier,
       status: "Available",
       assignedTo: null,

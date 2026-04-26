@@ -169,6 +169,7 @@ const Dashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const now = new Date();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -451,7 +452,7 @@ const Dashboard = () => {
                         <div className="icon-cell">
                           <Package style={{ height: 15, width: 15, color: "#60a5fa" }} />
                         </div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#e4e4e7" }}>{item.name}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#e4e4e7" }}>{item.itemType?.name || "Unknown Asset"}</span>
                       </div>
                     </td>
                     <td className="inv-td">

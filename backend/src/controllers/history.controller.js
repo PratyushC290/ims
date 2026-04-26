@@ -19,7 +19,11 @@ export const getItemHistory = async (req, res) => {
 export const getLatestActivity = async (req, res) => {
   try {
     const logs = await History.find()
-      .populate("item", "name identifier")
+      .populate({
+        path: "item",
+        select: "identifier itemType",
+        populate: { path: "itemType", select: "name category" }
+      })
       .populate("targetUser", "fullname")
       .populate("authorizedBy", "fullname")
       .sort({ createdAt: -1 })
@@ -40,7 +44,11 @@ export const getGlobalAuditLog = async (req, res) => {
 
     const [logs, totalLogs] = await Promise.all([
       History.find()
-        .populate("item", "name identifier category")
+        .populate({
+          path: "item",
+          select: "identifier itemType",
+          populate: { path: "itemType", select: "name category" }
+        })
         .populate("targetUser", "fullname role")
         .populate("authorizedBy", "fullname")
         .sort({ createdAt: -1 })

@@ -8,6 +8,7 @@ import itemRoutes from "./routes/item.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import statsRoutes from "./routes/stats.routes.js";
 import historyRoutes from './routes/history.routes.js';
+import itemTypeRoutes from "./routes/itemType.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/item-types", itemTypeRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/stats", statsRoutes);

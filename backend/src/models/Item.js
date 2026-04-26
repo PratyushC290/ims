@@ -2,15 +2,10 @@ import mongoose, { Schema } from "mongoose";
 
 const itemSchema = new Schema(
   {
-    name: {
-      type: String,
+    itemType: {
+      type: Schema.Types.ObjectId,
+      ref: "ItemType",
       required: true,
-      trim: true,
-    },
-    category: {
-      type: String,
-      required: true,
-      enum: ["Hardware", "Software License", "Accessories"],
     },
     identifier: {
       type: String,
@@ -34,10 +29,10 @@ const itemSchema = new Schema(
   },
 );
 
-itemSchema.index({ name: "text", identifier: "text" });
+itemSchema.index({ identifier: "text" });
 
 itemSchema.index({ status: 1 });
-itemSchema.index({ category: 1 });
+itemSchema.index({ itemType: 1 });
 itemSchema.index({ assignedTo: 1 });
 itemSchema.index({ createdAt: -1 });
 

@@ -36,25 +36,25 @@ const Pagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
   };
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100/50 flex-wrap gap-4">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-800/50 flex-wrap gap-4 bg-[#141418]/30">
       <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-zinc-500">
           Showing{" "}
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-zinc-300">
             {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}
           </span>{" "}
           to{" "}
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-zinc-300">
             {Math.min(currentPage * itemsPerPage, totalItems)}
           </span>{" "}
-          of <span className="font-medium text-gray-900">{totalItems}</span> results
+          of <span className="font-medium text-zinc-300">{totalItems}</span> results
         </span>
 
         <select
           value={itemsPerPage}
           onChange={(e) => handleLimitChange(Number(e.target.value))}
           disabled={loading}
-          className="text-sm px-2 py-1 bg-white border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+          className="text-sm px-3 py-1.5 bg-[#09090b] border border-zinc-800 rounded-lg text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 transition-all cursor-pointer hover:border-zinc-700"
         >
           <option value={10}>10 / page</option>
           <option value={20}>20 / page</option>
@@ -62,11 +62,11 @@ const Pagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
         </select>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={() => handlePageClick(1)}
           disabled={currentPage === 1 || loading}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title="First page"
         >
           <ChevronsLeft className="h-4 w-4" />
@@ -75,7 +75,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
         <button
           onClick={() => handlePageClick(currentPage - 1)}
           disabled={currentPage === 1 || loading}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all mr-2"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -85,11 +85,11 @@ const Pagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
             key={page}
             onClick={() => handlePageClick(page)}
             disabled={loading}
-            className={`min-w-9 h-9 px-3 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed
+            className={`min-w-9 h-9 px-3 rounded-lg text-sm font-semibold transition-all disabled:cursor-not-allowed
               ${
                 page === currentPage
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-blue-600/90 text-white shadow-[0_0_12px_rgba(37,99,235,0.3)]"
+                  : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200"
               }
             `}
           >
@@ -100,7 +100,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
         <button
           onClick={() => handlePageClick(currentPage + 1)}
           disabled={currentPage === totalPages || loading}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all ml-2"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -108,7 +108,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
         <button
           onClick={() => handlePageClick(totalPages)}
           disabled={currentPage === totalPages || loading}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title="Last page"
         >
           <ChevronsRight className="h-4 w-4" />

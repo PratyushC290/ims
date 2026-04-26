@@ -119,7 +119,7 @@ const AuditLogs = () => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
-      log.item?.name?.toLowerCase().includes(term) ||
+      log.item?.itemType?.name?.toLowerCase().includes(term) ||
       log.item?.identifier?.toLowerCase().includes(term) ||
       log.targetUser?.fullname?.toLowerCase().includes(term) ||
       log.action?.toLowerCase().includes(term)
@@ -250,7 +250,7 @@ const AuditLogs = () => {
                           <MonitorSmartphone style={{ height: 15, width: 15, color: "#60a5fa" }} />
                         </div>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#e4e4e7" }}>{log.item?.name || "Unknown"}</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#e4e4e7" }}>{log.item?.itemType?.name || "Unknown"}</div>
                           <div style={{ fontSize: 11, color: "#52525b", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{log.item?.identifier || "N/A"}</div>
                         </div>
                       </div>

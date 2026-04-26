@@ -24,7 +24,8 @@ export const getDashboardStats = async (req, res) => {
         .sort({ updatedAt: -1 })
         .limit(5)
         .populate("assignedTo", "fullname role")
-        .select("name identifier status updatedAt")
+        .populate("itemType", "name category thumbnail")
+        .select("itemType identifier status updatedAt")
         .lean(),
     ]);
 
