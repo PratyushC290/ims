@@ -1,4 +1,5 @@
 import { User } from "../models/User.js";
+import { History } from "../models/History.js";
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -107,6 +108,32 @@ export const manuallyAddUser = async (req, res) => {
         accountStatus: newUser.accountStatus,
       },
     });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const deletedUser = await User.findByIdAndDelete(userId);
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getUserHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const history = await History.find({ targetUser: userId })
+      .populate("item", "identifier")
+      .populate("authorizedBy", "fullname")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ history });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

@@ -1,16 +1,19 @@
-import express from "express";
-import { getAllUsers, getUserById, manuallyAddUser } from "../controllers/user.controller.js";
-import { protectRoute, adminOnly } from "../middlewares/auth.middleware.js";
+import { Router } from "express";
+import {
+  getAllUsers,
+  getUserById,
+  manuallyAddUser,
+  deleteUser,
+  getUserHistory
+} from "../controllers/user.controller.js";
+import { protectRoute, adminOnly, superAdminOnly } from "../middlewares/auth.middleware.js";
 
-const router = express.Router();
+const router = Router();
 
-router.use(protectRoute);
-
-// GET /api/users
-router.get("/", getAllUsers);
-router.get("/:userId", getUserById);
-
-// POST /api/users/add - Admin only
-router.post("/add", adminOnly, manuallyAddUser);
+router.get("/", protectRoute, adminOnly, getAllUsers);
+router.post("/add", protectRoute, adminOnly, manuallyAddUser);
+router.get("/:userId", protectRoute, getUserById);
+router.delete("/:userId", protectRoute, superAdminOnly, deleteUser);
+router.get("/:userId/history", protectRoute, getUserHistory);
 
 export default router;

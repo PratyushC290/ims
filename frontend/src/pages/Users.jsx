@@ -33,11 +33,14 @@ const Users = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All");
 
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/users?page=${page}&limit=${limit}`);
+      const queryParams = [`page=${page}`, `limit=${limit}`];
+      if (roleFilter !== "All") queryParams.push(`role=${roleFilter}`);
+      const response = await api.get(`/users?${queryParams.join('&')}`);
       setUsers(response.data.users);
       setPagination(response.data.pagination);
     } catch (error) {
@@ -45,7 +48,7 @@ const Users = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit]);
+  }, [page, limit, roleFilter]);
 
   const handleLimitChange = (newLimit) => {
     setLimit(newLimit);
@@ -105,6 +108,19 @@ const Users = () => {
       toast.error(
         error.response?.data?.message || "Failed to update user status",
       );
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    if (currentUserRole !== "Super Admin") return;
+    if (!window.confirm(`Are you sure you want to permanently delete user ${userName}? This action cannot be undone.`)) return;
+
+    try {
+      await api.delete(`/users/${userId}`);
+      toast.success(`${userName} has been deleted.`);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete user.");
     }
   };
 
@@ -180,8 +196,8 @@ const Users = () => {
 
       {/* The Frosted Glass Table Wrapper */}
       <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-        <div className="p-4 border-b border-gray-100/50">
-          <div className="relative w-80">
+        <div className="p-4 border-b border-gray-100/50 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -191,6 +207,18 @@ const Users = () => {
               className="w-full pl-9 pr-4 py-2 bg-white/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
+          <select 
+            value={roleFilter} 
+            onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+            className="sm:w-48 p-2 bg-white/50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          >
+            <option value="All">All Roles</option>
+            <option value="Student">Student</option>
+            <option value="Staff">Staff</option>
+            <option value="Faculty">Faculty</option>
+            <option value="Admin">Admin</option>
+            <option value="Super Admin">Super Admin</option>
+          </select>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -302,7 +330,7 @@ const Users = () => {
                           onClick={() =>
                             handleDemoteRole(user._id, user.fullname)
                           }
-                          className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
+                          className="text-sm text-orange-600 hover:text-orange-800 font-medium transition-colors bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-100"
                         >
                           Revoke Admin
                         </button>
@@ -312,6 +340,13 @@ const Users = () => {
                           No actions
                         </span>
                       )}
+                      {/* Delete User Button for all users except oneself */}
+                      <button
+                          onClick={() => handleDeleteUser(user._id, user.fullname)}
+                          className="ml-2 text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
+                      >
+                        Delete
+                      </button>
                     </td>
                   )}
                 </tr>

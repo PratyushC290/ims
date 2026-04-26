@@ -6,6 +6,12 @@ import {
   returnItem,
   createBulkItems,
   toggleMaintenance,
+  moveItem,
+  bulkAssignFolder,
+  bulkUnassignFolder,
+  undoAction,
+  deleteItem,
+  getItemHistory
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 
@@ -13,22 +19,20 @@ const router = express.Router();
 
 router.use(protectRoute);
 
-// POST /api/items/bulk
 router.post("/bulk", createBulkItems);
+router.post("/bulk-assign-folder", bulkAssignFolder);
+router.post("/bulk-unassign-folder", bulkUnassignFolder);
 
-// POST /api/items
 router.post("/", createItem);
-
-// GET /api/items
 router.get("/", getAllItems);
+router.get("/:itemId/history", getItemHistory);
 
-// PUT /api/items/:itemId/assign
 router.put("/:itemId/assign", assignItem);
-
-// PUT /api/items/:itemId/return
 router.put("/:itemId/return", returnItem);
-
-// PUT /api/items/:itemId/maintenance
 router.put("/:itemId/maintenance", toggleMaintenance);
+router.put("/:itemId/move", moveItem);
+router.delete("/:itemId", deleteItem);
+
+router.post("/undo/:actionLogId", undoAction);
 
 export default router;

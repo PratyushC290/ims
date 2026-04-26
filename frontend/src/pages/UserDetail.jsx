@@ -8,6 +8,7 @@ import {
   MonitorSmartphone,
   Calendar,
   Loader2,
+  History as HistoryIcon
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -17,17 +18,20 @@ const UserDetail = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [items, setItems] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [userResponse, itemsResponse] = await Promise.all([
+      const [userResponse, itemsResponse, historyResponse] = await Promise.all([
         api.get(`/users/${userId}`),
         api.get("/items"),
+        api.get(`/users/${userId}/history`)
       ]);
       setUser(userResponse.data);
       setItems(itemsResponse.data.items);
+      setHistory(historyResponse.data.history);
     } catch (error) {
       toast.error("Failed to load user details");
       navigate(-1);
@@ -136,9 +140,6 @@ const UserDetail = () => {
                       </div>
                       <div>
                         <div className="font-medium text-gray-900">
-                          {item.name}
-                        </div>
-                        <div className="text-sm font-mono text-gray-500">
                           {item.identifier}
                         </div>
                       </div>
@@ -146,6 +147,46 @@ const UserDetail = () => {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Calendar className="h-4 w-4" />
                       {formatDate(item.updatedAt)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <HistoryIcon className="h-5 w-5" />
+              Activity History
+            </h3>
+
+            {history.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                <p className="text-sm">No recorded history</p>
+              </div>
+            ) : (
+              <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 pb-2">
+                {history.map((log) => (
+                  <div key={log._id} className="relative pl-6">
+                    <div className="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-white border-2 border-blue-500"></div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-gray-400 mb-1">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900 mb-1">
+                        {log.action}
+                      </span>
+                      <span className="text-sm text-gray-600 font-mono">
+                        Asset: {log.item?.identifier || 'Unknown'}
+                      </span>
+                      <span className="text-xs text-gray-400 mt-1">
+                        Authorized by: {log.authorizedBy?.fullname}
+                      </span>
+                      {log.image && (
+                        <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 max-w-xs shadow-sm">
+                          <img src={log.image} alt="Return proof" className="w-full h-auto object-cover" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

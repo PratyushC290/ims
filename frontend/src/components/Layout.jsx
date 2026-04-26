@@ -7,6 +7,7 @@ import {
   Bell,
   CheckCheck,
   History,
+  AlertTriangle
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
@@ -16,6 +17,7 @@ const Layout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -31,8 +33,13 @@ const Layout = () => {
   ];
 
   const handleLogout = () => {
+    setConfirmModal({ isOpen: true });
+  };
+
+  const confirmLogout = () => {
     localStorage.removeItem("token");
     toast.success("Logged out successfully");
+    setConfirmModal({ isOpen: false });
     navigate("/login");
   };
 
@@ -258,6 +265,34 @@ const Layout = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Logout Confirm Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 relative">
+            <div className="mb-4 inline-flex p-3 rounded-2xl bg-red-100 text-red-600">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Log Out</h2>
+            <p className="text-sm text-gray-500 mb-6">Are you sure you want to log out of your session?</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmModal({ isOpen: false })} 
+                className="flex-1 py-2.5 bg-gray-50 text-gray-700 rounded-xl font-bold border border-gray-200 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmLogout} 
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold shadow-sm hover:bg-red-700"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

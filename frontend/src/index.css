@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+:root {
+  --theme-bg: #F8F9F5;
+  --theme-panel: #FFFFFF;
+  --theme-text: #1A1C19;
+  --theme-text-muted: #8F968A;
+  --theme-accent: #8CB881;
+  --theme-accent-hover: #7ba570;
+  --theme-accent-light: #EAF2E6;
+  --theme-border: #EBECE7;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
+}

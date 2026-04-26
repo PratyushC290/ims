@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import itemRoutes from "./routes/item.routes.js";
+import folderRoutes from "./routes/folder.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import statsRoutes from "./routes/stats.routes.js";
 import historyRoutes from './routes/history.routes.js';
@@ -20,6 +21,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/folders", folderRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/stats", statsRoutes);

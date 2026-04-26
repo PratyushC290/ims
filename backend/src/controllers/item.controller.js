@@ -2,16 +2,16 @@ import { Item } from "../models/Item.js";
 import { User } from "../models/User.js";
 import { History } from "../models/History.js";
 import { Notification } from "../models/Notification.js";
+import { ActionLog } from "../models/ActionLog.js";
 
 export const createItem = async (req, res) => {
   try {
-    const { name, category, identifier } = req.body;
+    const { identifier, folder } = req.body;
     const newItem = await Item.create({
-      name,
-      category,
       identifier,
       status: "Available",
       assignedTo: null,
+      folder: folder || null,
     });
 
     res.status(201).json({
@@ -30,7 +30,7 @@ export const createItem = async (req, res) => {
 
 export const getAllItems = async (req, res) => {
   try {
-    const { status, category, search } = req.query;
+    const { status, category, search, folder } = req.query;
 
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
@@ -38,10 +38,9 @@ export const getAllItems = async (req, res) => {
 
     let query = {};
     if (status) query.status = status;
-    if (category) query.category = category;
+    if (folder !== undefined) query.folder = folder === "null" ? null : folder;
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
         { identifier: { $regex: search, $options: "i" } },
       ];
     }
@@ -100,7 +99,7 @@ export const assignItem = async (req, res) => {
     });
 
     res.status(200).json({
-      message: `${item.name} has been successfully assigned to ${user.fullname}.`,
+      message: `Asset ${item.identifier} has been successfully assigned to ${user.fullname}.`,
       item,
     });
   } catch (error) {
@@ -111,6 +110,7 @@ export const assignItem = async (req, res) => {
 export const returnItem = async (req, res) => {
   try {
     const { itemId } = req.params;
+    const { image } = req.body;
 
     const oldItem = await Item.findOneAndUpdate(
       { _id: itemId, status: "Assigned" },
@@ -130,12 +130,13 @@ export const returnItem = async (req, res) => {
       action: "Returned",
       targetUser: oldItem.assignedTo,
       authorizedBy: req.user.userId,
+      image: image || null,
     });
 
     const updatedItem = await Item.findById(itemId);
 
     res.status(200).json({
-      message: `${updatedItem.name} has been returned to the inventory.`,
+      message: `Asset ${updatedItem.identifier} has been returned to the inventory.`,
       item: updatedItem,
     });
   } catch (error) {
@@ -154,8 +155,6 @@ export const createBulkItems = async (req, res) => {
     }
 
     const formattedItems = items.map((item) => ({
-      name: item.name,
-      category: item.category,
       identifier: item.identifier,
       status: "Available",
       assignedTo: null,
@@ -229,11 +228,158 @@ export const toggleMaintenance = async (req, res) => {
     });
 
     res.status(200).json({
-      message: `${item.name} is now ${item.status}.`,
+      message: `Asset ${item.identifier} is now ${item.status}.`,
       item: item,
     });
   } catch (error) {
     console.error("Toggle Maintenance Error:", error); // Will print the exact crash in your terminal
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const moveItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { newFolderId } = req.body;
+    
+    const item = await Item.findById(itemId);
+    if (!item) return res.status(404).json({ message: "Item not found." });
+    
+    const previousFolder = item.folder;
+    item.folder = newFolderId || null;
+    await item.save();
+
+    res.status(200).json({ message: "Item moved successfully.", item });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const bulkAssignFolder = async (req, res) => {
+  try {
+    const { folderId, userId } = req.body;
+    
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    const items = await Item.find({ folder: folderId, status: "Available" });
+    if (items.length === 0) return res.status(400).json({ message: "No available items found in this folder." });
+
+    const itemIds = items.map(i => i._id);
+    await Item.updateMany(
+      { _id: { $in: itemIds } },
+      { $set: { status: "Assigned", assignedTo: user._id } }
+    );
+
+    const actionLog = await ActionLog.create({
+      actionType: "BULK_ASSIGN",
+      targetIds: itemIds,
+      targetType: "Item",
+      previousState: { status: "Available", assignedTo: null },
+      userId: req.user.userId || req.user._id || req.user.id
+    });
+
+    res.status(200).json({ 
+      message: `Assigned ${items.length} items to ${user.fullname}.`,
+      actionLogId: actionLog._id
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const bulkUnassignFolder = async (req, res) => {
+  try {
+    const { folderId } = req.body;
+    
+    const items = await Item.find({ folder: folderId, status: "Assigned" });
+    if (items.length === 0) return res.status(400).json({ message: "No assigned items found in this folder." });
+
+    const itemIds = items.map(i => i._id);
+    
+    // Store previous states to undo properly
+    const previousStates = items.map(i => ({ itemId: i._id, assignedTo: i.assignedTo }));
+
+    await Item.updateMany(
+      { _id: { $in: itemIds } },
+      { $set: { status: "Available", assignedTo: null } }
+    );
+
+    const actionLog = await ActionLog.create({
+      actionType: "BULK_UNASSIGN",
+      targetIds: itemIds,
+      targetType: "Item",
+      previousState: previousStates,
+      userId: req.user.userId || req.user._id || req.user.id
+    });
+
+    res.status(200).json({ 
+      message: `Unassigned ${items.length} items.`,
+      actionLogId: actionLog._id
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const undoAction = async (req, res) => {
+  try {
+    const { actionLogId } = req.params;
+    
+    const actionLog = await ActionLog.findById(actionLogId);
+    if (!actionLog) return res.status(404).json({ message: "Action log not found." });
+    if (actionLog.isReverted) return res.status(400).json({ message: "Action already reverted." });
+
+    if (actionLog.actionType === "BULK_ASSIGN") {
+      await Item.updateMany(
+        { _id: { $in: actionLog.targetIds } },
+        { $set: { status: "Available", assignedTo: null } }
+      );
+    } else if (actionLog.actionType === "BULK_UNASSIGN") {
+      // Reassign to respective users
+      const bulkOps = actionLog.previousState.map(state => ({
+        updateOne: {
+          filter: { _id: state.itemId },
+          update: { $set: { status: "Assigned", assignedTo: state.assignedTo } }
+        }
+      }));
+      if (bulkOps.length > 0) {
+        await Item.bulkWrite(bulkOps);
+      }
+    }
+
+    actionLog.isReverted = true;
+    await actionLog.save();
+
+    res.status(200).json({ message: "Action undone successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const deleteItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const deletedItem = await Item.findByIdAndDelete(itemId);
+    if (!deletedItem) {
+      return res.status(404).json({ message: "Item not found." });
+    }
+    await History.deleteMany({ item: itemId });
+    res.status(200).json({ message: "Item deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getItemHistory = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const history = await History.find({ item: itemId })
+      .populate("targetUser", "fullname instituteEmail")
+      .populate("authorizedBy", "fullname")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ history });
+  } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

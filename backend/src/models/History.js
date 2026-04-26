@@ -35,6 +35,10 @@ const historySchema = new Schema(
       trim: true,
       default: "",
     },
+    image: {
+      type: String, // base64 string
+      default: null,
+    },
   },
   {
     timestamps: true,
