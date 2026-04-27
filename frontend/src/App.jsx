@@ -4,8 +4,10 @@ import StudentLogin from "./pages/StudentLogin";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
+import IssuedItems from "./pages/IssuedItems";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
+import UserAssets from "./pages/UserAssets";
 import AuditLogs from "./pages/AuditLogs";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import Register from "./pages/Register";
@@ -27,8 +29,10 @@ const App = () => {
           {/* Admin Routes */}
           <Route index element={<Dashboard />} />
           <Route path="inventory" element={<Inventory />} />
+          <Route path="issued-items" element={<IssuedItems />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:userId" element={<UserDetail />} />
+          <Route path="user-assets" element={<UserAssets />} />
           <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="requests" element={<Requests />} />
           <Route path="no-dues" element={<NoDues />} />

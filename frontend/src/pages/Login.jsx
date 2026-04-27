@@ -104,6 +104,17 @@ const Login = () => {
                 "Get Started"
               )}
             </button>
+
+            <p className="text-center text-sm text-gray-500">
+              Are you a student?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/student-login")}
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Login here
+              </button>
+            </p>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-5">

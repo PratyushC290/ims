@@ -38,8 +38,22 @@ export const getGlobalAuditLog = async (req, res) => {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
+    const { fromDate, toDate, action } = req.query;
+
+    const query = {};
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) {
+        const toDateEnd = new Date(toDate);
+        toDateEnd.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = toDateEnd;
+      }
+    }
+    if (action) query.action = action;
+
     const [logs, totalLogs] = await Promise.all([
-      History.find()
+      History.find(query)
         .populate("item", "name identifier category")
         .populate("targetUser", "fullname role")
         .populate("authorizedBy", "fullname")
@@ -47,7 +61,7 @@ export const getGlobalAuditLog = async (req, res) => {
         .skip(skip)
         .limit(limit)
         .lean(),
-      History.countDocuments(),
+      History.countDocuments(query),
     ]);
 
     res.status(200).json({

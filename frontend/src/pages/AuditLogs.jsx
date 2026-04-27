@@ -9,6 +9,7 @@ import {
   ArrowRight,
   Clock,
   Download,
+  Filter,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -22,11 +23,18 @@ const AuditLogs = () => {
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [actionFilter, setActionFilter] = useState("All");
 
-  const fetchLogs = useCallback(async () => {
+  const fetchLogs = useCallback(async (fetchPage = 1, fetchFromDate = "", fetchToDate = "", fetchActionFilter = "All") => {
     try {
       setLoading(true);
-      const response = await api.get(`/history/global?page=${page}&limit=20`);
+      let url = `/history/global?page=${fetchPage}&limit=20`;
+      if (fetchFromDate) url += `&fromDate=${fetchFromDate}`;
+      if (fetchToDate) url += `&toDate=${fetchToDate}`;
+      if (fetchActionFilter !== "All") url += `&action=${fetchActionFilter}`;
+      const response = await api.get(url);
       setLogs(response.data.logs);
       setPagination(response.data.pagination);
     } catch (error) {
@@ -34,18 +42,35 @@ const AuditLogs = () => {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
 
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    fetchLogs(page, fromDate, toDate, actionFilter);
+  }, [page]);
+
+  const applyFilters = () => {
+    setPage(1);
+    fetchLogs(1, fromDate, toDate, actionFilter);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportAuditLogs(api, "audit_logs", { fromDate, toDate, actionFilter });
+      toast.success("Audit log exported successfully");
+    } catch (error) {
+      toast.error("Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const filteredLogs = logs.filter((log) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
       log.item?.name?.toLowerCase().includes(term) ||
-      log.item?.identifier?.toLowerCase().includes(term) ||
+      log.notes?.toLowerCase().includes(term) ||
       log.targetUser?.fullname?.toLowerCase().includes(term) ||
       log.action?.toLowerCase().includes(term)
     );
@@ -63,34 +88,22 @@ const AuditLogs = () => {
   };
 
     const getActionStyle = (action) => {
-      switch (action) {
-        case "Assigned":
-          return "bg-blue-500/10 text-blue-500 border-blue-500/20";
-        case "Returned":
-          return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-        case "Sent to Maintenance":
-          return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-        case "Removed from Maintenance":
-          return "bg-green-500/10 text-green-500 border-green-500/20";
-        default:
-          return "bg-gray-500/10 text-gray-500 border-gray-500/20";
-      }
-    };
+    switch (action) {
+      case "Assigned":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      case "Returned":
+        return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+      case "Sent to Maintenance":
+        return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+      case "Removed from Maintenance":
+        return "bg-green-500/10 text-green-500 border-green-500/20";
+      default:
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20";
+    }
+  };
 
   const getActionIcon = (action) => {
     return <ArrowRight className="h-3 w-3" />;
-  };
-
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      await exportAuditLogs(api);
-      toast.success("Audit log exported successfully");
-    } catch (error) {
-      toast.error("Failed to export audit log");
-    } finally {
-      setExporting(false);
-    }
   };
 
   if (loading) {
@@ -124,15 +137,50 @@ const AuditLogs = () => {
 
       <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
         <div className="p-4 border-b border-[var(--theme-border)]">
-          <div className="relative w-80">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" />
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative w-64">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" />
+              <input
+                type="text"
+                placeholder="Search by item, user..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-[var(--theme-text-muted)]" />
+              <select
+                value={actionFilter}
+                onChange={(e) => setActionFilter(e.target.value)}
+                className="px-3 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="All">All Actions</option>
+                <option value="Assigned">Assigned</option>
+                <option value="Returned">Returned</option>
+                <option value="Sent to Maintenance">Sent to Maintenance</option>
+                <option value="Removed from Maintenance">Removed from Maintenance</option>
+              </select>
+            </div>
             <input
-              type="text"
-              placeholder="Search by item, user, or action..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-3 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
+            <span className="text-[var(--theme-text-muted)]">to</span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-3 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <button
+              onClick={applyFilters}
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              Apply
+            </button>
           </div>
         </div>
 
@@ -189,7 +237,7 @@ const AuditLogs = () => {
                             {log.item?.name || "Unknown"}
                           </div>
                           <div className="text-xs text-[var(--theme-text-muted)] font-mono">
-                            {log.item?.identifier || "N/A"}
+                            {log.notes?.split(' - ')[0] || log.notes?.split(' ')[0] || "N/A"}
                           </div>
                         </div>
                       </div>

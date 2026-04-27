@@ -10,9 +10,13 @@ export const exportToExcel = (data, filename, sheetName = "Sheet1") => {
   saveAs(blob, `${filename}_${new Date().toISOString().split("T")[0]}.xlsx`);
 };
 
-export const exportAuditLogs = async (api, filename = "audit_logs") => {
+export const exportAuditLogs = async (api, filename = "audit_logs", filters = {}) => {
   try {
-    const response = await api.get("/history/global?limit=1000");
+    let url = "/history/global?limit=1000";
+    if (filters.fromDate) url += `&fromDate=${filters.fromDate}`;
+    if (filters.toDate) url += `&toDate=${filters.toDate}`;
+    if (filters.actionFilter && filters.actionFilter !== "All") url += `&action=${filters.actionFilter}`;
+    const response = await api.get(url);
     const logs = response.data.logs || [];
     
     const formattedData = logs.map(log => ({

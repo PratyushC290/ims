@@ -98,11 +98,7 @@ const sendOtpEmail = async (email, otpCode) => {
 export const requestOtp = async (req, res) => {
   try {
     const { email, loginType } = req.body;
-    const user = await User.findOne({ instituteEmail: email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
+const user = await User.findOne({ instituteEmail: email });
 
     if (user.accountStatus === "Pending") {
       return res.status(403).json({
@@ -122,7 +118,7 @@ export const requestOtp = async (req, res) => {
     
     if (!allowedRoles.includes(user.role)) {
       return res.status(403).json({
-        message: loginType === "student" 
+        message: user.role === "Student" 
           ? "Please use the student login page." 
           : "Please use the admin login page.",
       });
@@ -195,7 +191,7 @@ export const verifyOtp = async (req, res) => {
     
     if (!allowedRoles.includes(user.role)) {
       return res.status(403).json({
-        message: loginType === "student" 
+        message: user.role === "Student" 
           ? "Please use the student login page." 
           : "Please use the admin login page.",
       });

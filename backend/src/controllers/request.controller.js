@@ -57,7 +57,12 @@ export const getAllRequests = async (req, res) => {
     let query = {};
 
     if (status) {
-      query.status = status;
+      const statusList = status.split(",");
+      if (statusList.length > 1) {
+        query.status = { $in: statusList };
+      } else {
+        query.status = status;
+      }
     }
 
     if (search) {
@@ -178,7 +183,7 @@ export const fulfillRequest = async (req, res) => {
 
     await History.create({
       item: catalogItemId,
-      action: "Issued",
+      action: "Assigned",
       targetUser: request.user,
       authorizedBy: req.user.userId,
       notes: `${identifier} - Fulfilled request for ${request.requestedItem}`,

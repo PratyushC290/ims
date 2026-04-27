@@ -51,7 +51,6 @@ const RequestModal = ({ isOpen, onClose, onSuccess }) => {
         reason: reason.trim(),
       });
 
-      toast.success("Request submitted!");
       onSuccess(res.data.request);
       
       setRequestedItem("");

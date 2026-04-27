@@ -1,6 +1,6 @@
 // edited by abhiram parupudi 2401cs21
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Sun, Moon, LayoutDashboard, MonitorSmartphone, Users, LogOut, Bell, CheckCheck, History, AlertTriangle, ShoppingCart, FileText } from "lucide-react";
+import { Sun, Moon, LayoutDashboard, MonitorSmartphone, Users, LogOut, Bell, CheckCheck, History, AlertTriangle, ShoppingCart, FileText, Package } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import api from "../api";
@@ -52,8 +52,14 @@ const Layout = () => {
           path: "/dashboard/inventory",
           icon: MonitorSmartphone,
         },
-        { name: "Directory", path: "/dashboard/users", icon: Users },
+        {
+          name: "Issued Items",
+          path: "/dashboard/issued-items",
+          icon: Package,
+        },
+        { name: "User Assets", path: "/dashboard/user-assets", icon: Package },
         { name: "Hardware Requests", path: "/dashboard/requests", icon: ShoppingCart },
+        { name: "Directory", path: "/dashboard/users", icon: Users },
         { name: "No Dues", path: "/dashboard/no-dues", icon: FileText },
         { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
       ];

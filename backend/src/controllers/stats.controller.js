@@ -46,7 +46,8 @@ export const getDashboardStats = async (req, res) => {
         pendingRequests: pendingAdminRequests,
       },
       requestsOverview: {
-        pending: pendingHardwareRequests,
+        pendingHardware: pendingHardwareRequests,
+        pendingAdmin: pendingAdminRequests,
       },
       recentActivity: recentIssued,
     });

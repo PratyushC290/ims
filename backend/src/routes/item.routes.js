@@ -1,9 +1,10 @@
 import express from "express";
 import {
-  createItem, getAllItems, updateItemStock,
+  createItem, getAllItems, updateItemStock, updateItem,
   issueAsset, returnAsset, getIssuedAssets, getItemHistory,
   deleteItem, moveItem, createBulkItems, getAllIssued,
-  undoAction, bulkAssignFolder, bulkUnassignFolder, getUserIssuedItems
+  undoAction, bulkAssignFolder, bulkUnassignFolder, getUserIssuedItems,
+  assignAsset, getUserIssuedItemsById
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 
@@ -19,11 +20,14 @@ router.post("/", createItem);
 router.get("/", getAllItems);
 router.get("/issued", getAllIssued);
 router.get("/my-issued", getUserIssuedItems);
+router.get("/user/:userId/issued", getUserIssuedItemsById);
 router.get("/:itemId/history", getItemHistory);
 
+router.post("/assign", assignAsset);
+router.put("/:itemId", updateItem);
 router.put("/:itemId/stock", updateItemStock);
 router.put("/:itemId/issue", issueAsset);
-router.put("/:itemId/return", returnAsset);
+router.put("/return/:issuedAssetId", returnAsset);
 
 router.put("/:itemId/move", moveItem);
 router.delete("/:itemId", deleteItem);

@@ -47,6 +47,5 @@ const issuedAssetSchema = new Schema(
 
 issuedAssetSchema.index({ user: 1, status: 1 });
 issuedAssetSchema.index({ catalogItem: 1, status: 1 });
-issuedAssetSchema.index({ identifier: 1 });
 
 export const IssuedAsset = mongoose.model("IssuedAsset", issuedAssetSchema);

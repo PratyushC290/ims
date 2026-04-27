@@ -57,11 +57,6 @@ const Dashboard = () => {
   const chartData = [
     { name: "Available", value: inventoryOverview.available, color: "#10B981" }, // Emerald 500
     { name: "Assigned", value: inventoryOverview.assigned, color: "#3B82F6" }, // Blue 500
-    {
-      name: "Maintenance",
-      value: inventoryOverview.maintenance,
-      color: "#F59E0B",
-    }, // Amber 500
   ];
 
   // Helper arrays for mapping UI cards
@@ -88,18 +83,18 @@ const Dashboard = () => {
       bg: "bg-blue-500/10",
     },
     {
-      title: "In Maintenance",
-      value: inventoryOverview.maintenance,
-      icon: Wrench,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
-    },
-    {
-      title: "Pending Requests",
-      value: requestsOverview?.pending || 0,
+      title: "Admin Approval Pending",
+      value: requestsOverview?.pendingAdmin || 0,
       icon: Clock,
       color: "text-purple-500",
       bg: "bg-purple-500/10",
+    },
+    {
+      title: "Hardware Request Pending",
+      value: requestsOverview?.pendingHardware || 0,
+      icon: Clock,
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
     },
   ];
 
@@ -259,7 +254,7 @@ const Dashboard = () => {
                     className="border-b border-[var(--theme-border)] hover:bg-[var(--theme-bg)] transition-colors"
                   >
                     <td className="py-4 pl-2 font-medium text-[var(--theme-text)]">
-                      {item.name}
+                      {item.catalogItem?.name || "Unknown"}
                     </td>
                     <td className="py-4 text-sm text-[var(--theme-text-muted)] font-mono">
                       {item.identifier}
@@ -267,23 +262,22 @@ const Dashboard = () => {
                     <td className="py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-                        ${item.status === "Available" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : ""}
-                        ${item.status === "Assigned" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : ""}
-                        ${item.status === "Under Maintenance" ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : ""}
+                        ${item.status === "Issued" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : ""}
+                        ${item.status === "Returned" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : ""}
                       `}
                       >
                         {item.status}
                       </span>
                     </td>
                     <td className="py-4 text-sm text-[var(--theme-text)]">
-                      {item.assignedTo ? (
-                        item.assignedTo.fullname
+                      {item.user ? (
+                        item.user.fullname
                       ) : (
                         <span className="text-[var(--theme-text-muted)] italic">Unassigned</span>
                       )}
                     </td>
                     <td className="py-4 text-sm text-[var(--theme-text-muted)] text-right pr-2">
-                      {new Date(item.updatedAt).toLocaleDateString("en-US", {
+                      {new Date(item.issuedAt || item.updatedAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         hour: "2-digit",

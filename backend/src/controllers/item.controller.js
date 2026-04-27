@@ -126,6 +126,36 @@ export const updateItemStock = async (req, res) => {
   }
 };
 
+export const updateItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { name, category, totalQuantity } = req.body;
+
+    const item = await Item.findById(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found." });
+    }
+
+    if (name) item.name = name;
+    if (category !== undefined) item.category = category;
+    
+    if (totalQuantity !== undefined && totalQuantity !== item.totalQuantity) {
+      const diff = Number(totalQuantity) - item.totalQuantity;
+      item.totalQuantity = Number(totalQuantity);
+      item.availableQuantity = Math.max(0, item.availableQuantity + diff);
+    }
+
+    await item.save();
+
+    res.status(200).json({
+      message: "Item updated successfully.",
+      item,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 export const issueAsset = async (req, res) => {
   try {
     const { itemId } = req.params;
@@ -183,7 +213,7 @@ export const issueAsset = async (req, res) => {
 export const returnAsset = async (req, res) => {
   try {
     const { issuedAssetId } = req.params;
-    const { notes } = req.body;
+    const notes = req.body?.notes || "";
 
     const issuedAsset = await IssuedAsset.findById(issuedAssetId).populate("catalogItem");
     if (!issuedAsset) {
@@ -194,7 +224,7 @@ export const returnAsset = async (req, res) => {
       return res.status(400).json({ message: "Asset is not currently issued." });
     }
 
-    const catalogItem = await Item.findById(issuedAsset.catalogItem);
+    const catalogItem = await Item.findById(issuedAsset.catalogItem._id);
     if (!catalogItem) {
       return res.status(404).json({ message: "Catalog item not found." });
     }
@@ -211,7 +241,7 @@ export const returnAsset = async (req, res) => {
       action: "Returned",
       targetUser: issuedAsset.user,
       authorizedBy: req.user.userId,
-      notes: `${issuedAsset.identifier} - ${notes || ""}`,
+      notes: notes ? `${issuedAsset.identifier} - ${notes}` : issuedAsset.identifier,
     });
 
     res.status(200).json({
@@ -220,6 +250,7 @@ export const returnAsset = async (req, res) => {
       catalogItem,
     });
   } catch (error) {
+    console.error("Return Asset Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -254,6 +285,21 @@ export const getUserIssuedItems = async (req, res) => {
 
     const issuedAssets = await IssuedAsset.find({ user: userId, status: "Issued" })
       .populate("catalogItem", "name category")
+      .sort({ issuedAt: -1 });
+
+    res.status(200).json({ issuedAssets });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getUserIssuedItemsById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const issuedAssets = await IssuedAsset.find({ user: userId, status: "Issued" })
+      .populate("catalogItem", "name category")
+      .populate("user", "fullname instituteEmail")
       .sort({ issuedAt: -1 });
 
     res.status(200).json({ issuedAssets });
@@ -336,7 +382,7 @@ export const getAllIssued = async (req, res) => {
   try {
     const { search } = req.query;
     
-    let query = {};
+    let query = { status: "Issued" };
     if (search) {
       query.$or = [
         { identifier: { $regex: search, $options: "i" } },
@@ -382,6 +428,61 @@ export const bulkUnassignFolder = async (req, res) => {
   try {
     const { folderId } = req.body;
     res.status(400).json({ message: "Not implemented in stock model." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const assignAsset = async (req, res) => {
+  try {
+    const { userId, identifier, hardwareType } = req.body;
+
+    if (!userId || !identifier || !hardwareType) {
+      return res.status(400).json({ message: "User ID, hardware type, and identifier are required." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const catalogItem = await Item.findOne({ name: hardwareType });
+    if (!catalogItem) {
+      return res.status(404).json({ message: "Hardware type not found. Please select a valid hardware type." });
+    }
+
+    const existing = await IssuedAsset.findOne({ identifier, status: "Issued" });
+    if (existing) {
+      return res.status(400).json({ message: "This identifier is already issued to another user." });
+    }
+
+    if (catalogItem.availableQuantity <= 0) {
+      return res.status(400).json({ message: "No available stock for this item." });
+    }
+
+    catalogItem.availableQuantity -= 1;
+    await catalogItem.save();
+
+    const issuedAsset = await IssuedAsset.create({
+      user: userId,
+      catalogItem: catalogItem._id,
+      identifier,
+      status: "Issued",
+    });
+
+    await History.create({
+      item: catalogItem._id,
+      action: "Assigned",
+      targetUser: user._id,
+      authorizedBy: req.user.userId,
+      notes: `${identifier}`,
+    });
+
+    res.status(201).json({
+      message: "Item assigned successfully.",
+      issuedAsset,
+      catalogItem,
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
