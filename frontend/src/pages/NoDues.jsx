@@ -64,6 +64,18 @@ const NoDues = () => {
     }
   };
 
+  const handleVerifyAndSave = async () => {
+    try {
+      setReturning("verifying");
+      await api.post("/no-dues/verify", { studentId: student._id });
+      toast.success("Verification saved!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save verification");
+    } finally {
+      setReturning(null);
+    }
+  };
+
   const printCertificate = () => {
     window.print();
   };
@@ -176,13 +188,27 @@ const NoDues = () => {
                   <p className="text-[var(--theme-text-muted)] mb-6">
                     This student has no pending items to return.
                   </p>
-                  <button
-                    onClick={printCertificate}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors no-print"
-                  >
-                    <Printer className="h-5 w-5" />
-                    Print Certificate
-                  </button>
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={printCertificate}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors no-print"
+                    >
+                      <Printer className="h-5 w-5" />
+                      Print Certificate
+                    </button>
+                    <button
+                      onClick={handleVerifyAndSave}
+                      disabled={returning === "verifying"}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 no-print"
+                    >
+                      {returning === "verifying" ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <CheckCircle className="h-5 w-5" />
+                      )}
+                      Verify & Save
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div>

@@ -15,6 +15,7 @@ import Register from "./pages/Register";
 import StudentPortal from "./pages/StudentPortal";
 import Requests from "./pages/Requests";
 import NoDues from "./pages/NoDues";
+import NoDuesVerifications from "./pages/NoDuesVerifications";
 
 const App = () => {
   return (
@@ -38,6 +39,7 @@ const App = () => {
           <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="requests" element={<Requests />} />
           <Route path="no-dues" element={<NoDues />} />
+          <Route path="no-dues-verifications" element={<NoDuesVerifications />} />
           
           {/* Student Route */}
           <Route path="my-portal" element={<StudentPortal />} />

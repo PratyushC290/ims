@@ -61,6 +61,7 @@ const Layout = () => {
         { name: "Hardware Requests", path: "/dashboard/requests", icon: ShoppingCart },
         { name: "Directory", path: "/dashboard/users", icon: Users },
         { name: "No Dues", path: "/dashboard/no-dues", icon: FileText },
+        { name: "No Dues Verifications", path: "/dashboard/no-dues-verifications", icon: FileText },
         { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
       ];
 
