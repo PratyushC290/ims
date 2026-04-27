@@ -33,7 +33,7 @@ export const createItem = async (req, res) => {
 
 export const getAllItems = async (req, res) => {
   try {
-    const { status, category, search, folder } = req.query;
+    const { status, category, search, folder, userEmail } = req.query;
 
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
@@ -44,6 +44,14 @@ export const getAllItems = async (req, res) => {
     if (folder !== undefined) query.folder = folder === "null" ? null : folder;
     if (search) {
       query.$or = [{ identifier: { $regex: search, $options: "i" } }];
+    }
+    if (userEmail) {
+      const user = await User.findOne({ instituteEmail: userEmail });
+      if (user) {
+        query.assignedTo = user._id;
+      } else {
+        query.assignedTo = "000000000000000000000000"; // Dummy ID if user not found
+      }
     }
 
     const [items, totalItems] = await Promise.all([

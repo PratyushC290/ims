@@ -43,6 +43,8 @@ const Inventory = () => {
   const [assignImageFile, setAssignImageFile] = useState(null);
   const [maintenanceImagePreview, setMaintenanceImagePreview] = useState(null);
   const [maintenanceImageFile, setMaintenanceImageFile] = useState(null);
+  const [addAssetImagePreview, setAddAssetImagePreview] = useState(null);
+  const [addAssetImageFile, setAddAssetImageFile] = useState(null);
 
   const [assignNotes, setAssignNotes] = useState("");
   const [returnNotes, setReturnNotes] = useState("");
@@ -55,6 +57,10 @@ const Inventory = () => {
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+
+  const [filterEmailInput, setFilterEmailInput] = useState("");
+  const [filterEmail, setFilterEmail] = useState("");
+  const [searchedUser, setSearchedUser] = useState(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("app_theme") === "dark");
 
@@ -85,7 +91,8 @@ const Inventory = () => {
       setLoading(true);
       const folderQuery = currentFolderId ? `?parent=${currentFolderId}` : "?parent=";
       const statusQ = statusFilter !== "All" ? `&status=${statusFilter}` : "";
-      const itemQuery = `?page=${page}&limit=${limit}&folder=${currentFolderId || "null"}${statusQ}`;
+      const emailQ = filterEmail ? `&userEmail=${encodeURIComponent(filterEmail)}` : "";
+      const itemQuery = `?page=${page}&limit=${limit}&folder=${currentFolderId || "null"}${statusQ}${emailQ}`;
       
       const [foldersRes, itemsRes, usersRes] = await Promise.all([
         api.get(`/folders${folderQuery}`),
@@ -102,9 +109,18 @@ const Inventory = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, currentFolderId, statusFilter]);
+  }, [page, limit, currentFolderId, statusFilter, filterEmail]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    if (filterEmail && users.length > 0) {
+      const user = users.find(u => u.instituteEmail.toLowerCase() === filterEmail.toLowerCase());
+      setSearchedUser(user || null);
+    } else {
+      setSearchedUser(null);
+    }
+  }, [filterEmail, users]);
 
   const filteredItems = useMemo(() => items.filter((item) => item.identifier.toLowerCase().includes(searchTerm.toLowerCase())), [items, searchTerm]);
   const filteredFolders = useMemo(() => folders.filter((folder) => folder.name.toLowerCase().includes(searchTerm.toLowerCase())), [folders, searchTerm]);
@@ -144,11 +160,15 @@ const Inventory = () => {
 
   const handleAddItem = async (e) => {
     e.preventDefault();
+    if (!newItem.identifier.trim()) return toast.error("asset identifier is required");
     try {
-      await api.post("/items", { ...newItem, folder: currentFolderId });
+      const uploadedUrl = await uploadImageFirst(addAssetImageFile);
+      await api.post("/items", { ...newItem, folder: currentFolderId, image: uploadedUrl });
       toast.success(`asset added`);
       setIsAddModalOpen(false);
       setNewItem({ identifier: "" });
+      setAddAssetImageFile(null);
+      setAddAssetImagePreview(null);
       fetchData();
     } catch (error) {
       toast.error("failed to add asset");
@@ -169,19 +189,28 @@ const Inventory = () => {
     if (!selectedUserId && !isBulkAssignModalOpen) return toast.error("select a user.");
     try {
       const uploadedUrl = await uploadImageFirst(assignImageFile);
-      await api.put(`/items/${selectedItem._id}/assign`, {
+      const res = await api.put(`/items/${selectedItem._id}/assign`, {
         userId: selectedUserId,
         notes: assignNotes,
         image: uploadedUrl // sending just the url string
       });
       toast.success(`asset assigned`);
       setIsAssignModalOpen(false);
+      
+      // Local state update
+      const assignedUser = users.find(u => u._id === selectedUserId);
+      setItems(prev => {
+        if (statusFilter === "Available") {
+          return prev.filter(item => item._id !== selectedItem._id);
+        }
+        return prev.map(item => item._id === selectedItem._id ? { ...item, status: "Assigned", assignedTo: assignedUser } : item);
+      });
+      
       setSelectedItem(null);
       setSelectedUserId("");
       setAssignNotes("");
       setAssignImageFile(null);
       setAssignImagePreview(null);
-      fetchData();
     } catch (error) {
       toast.error("failed to assign");
     }
@@ -191,17 +220,25 @@ const Inventory = () => {
     e.preventDefault();
     try {
       const uploadedUrl = await uploadImageFirst(returnImageFile);
-      await api.put(`/items/${selectedItem._id}/return`, {
+      const res = await api.put(`/items/${selectedItem._id}/return`, {
         notes: returnNotes,
         image: uploadedUrl // sending just the url string
       });
       toast.success("returned");
       setIsReturnModalOpen(false);
+      
+      // Local state update
+      setItems(prev => {
+        if (filterEmail || statusFilter === "Assigned") {
+          return prev.filter(item => item._id !== selectedItem._id);
+        }
+        return prev.map(item => item._id === selectedItem._id ? { ...item, status: "Available", assignedTo: null } : item);
+      });
+
       setSelectedItem(null);
       setReturnNotes("");
       setReturnImageFile(null);
       setReturnImagePreview(null);
-      fetchData();
     } catch (error) {
       toast.error("failed to return");
     }
@@ -211,17 +248,29 @@ const Inventory = () => {
     e.preventDefault();
     try {
       const uploadedUrl = await uploadImageFirst(maintenanceImageFile);
-      await api.put(`/items/${selectedItem._id}/maintenance`, {
+      const res = await api.put(`/items/${selectedItem._id}/maintenance`, {
         notes: maintenanceNotes,
         image: uploadedUrl // sending just the url string
       });
       toast.success("updated");
       setIsMaintenanceModalOpen(false);
+      
+      // Local state update
+      const newStatus = selectedItem.status === "Under Maintenance" ? "Available" : "Under Maintenance";
+      setItems(prev => {
+        if (filterEmail && newStatus === "Under Maintenance") {
+          return prev.filter(item => item._id !== selectedItem._id);
+        }
+        if (statusFilter !== "All" && statusFilter !== newStatus) {
+          return prev.filter(item => item._id !== selectedItem._id);
+        }
+        return prev.map(item => item._id === selectedItem._id ? { ...item, status: newStatus, assignedTo: newStatus === "Under Maintenance" ? null : item.assignedTo } : item);
+      });
+
       setSelectedItem(null);
       setMaintenanceNotes("");
       setMaintenanceImageFile(null);
       setMaintenanceImagePreview(null);
-      fetchData();
     } catch (error) {
       toast.error("failed to update");
     }
@@ -336,7 +385,29 @@ const Inventory = () => {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" />
-            <input type="text" placeholder="search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm font-medium focus:outline-none" />
+            <input type="text" placeholder="search asset..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm font-medium focus:outline-none" />
+          </div>
+          <div className="relative flex-1">
+            <Search className="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" />
+            <input 
+              type="text" 
+              placeholder="filter by user email... (press enter)" 
+              value={filterEmailInput} 
+              onChange={(e) => {
+                setFilterEmailInput(e.target.value);
+                if (e.target.value === "") {
+                  setFilterEmail("");
+                  setPage(1);
+                }
+              }} 
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setFilterEmail(filterEmailInput);
+                  setPage(1);
+                }
+              }} 
+              className="w-full pl-11 pr-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm font-medium focus:outline-none" 
+            />
           </div>
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="md:w-48 p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl font-medium text-sm focus:outline-none">
             <option value="All">all statuses</option>
@@ -346,6 +417,28 @@ const Inventory = () => {
           </select>
         </div>
       </div>
+
+      {searchedUser && filterEmail && (
+        <div className="bg-[var(--theme-panel)] rounded-2xl md:rounded-[2rem] shadow-sm border border-[var(--theme-border)] p-4 md:p-6 flex items-center gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--theme-accent)]/5 rounded-bl-full -z-10"></div>
+          <div className="relative">
+             <div className="absolute inset-0 bg-[var(--theme-accent)]/20 rounded-full blur-xl"></div>
+             <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-[var(--theme-bg)] shadow-md bg-[var(--theme-accent)] flex items-center justify-center text-[var(--theme-panel)] text-2xl md:text-4xl font-extrabold uppercase">
+                {searchedUser.fullname.charAt(0)}
+             </div>
+          </div>
+          <div className="flex-1">
+             <h2 className="text-xl md:text-2xl font-bold text-[var(--theme-text)]">{searchedUser.fullname}</h2>
+             <p className="text-sm font-medium text-[var(--theme-text-muted)] flex items-center gap-2 mt-1">
+               <span className="truncate">{searchedUser.instituteEmail}</span>
+             </p>
+             <div className="flex items-center gap-3 mt-3">
+               <span className="px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold text-[var(--theme-accent)] bg-[var(--theme-accent)]/10 uppercase tracking-widest">{searchedUser.role}</span>
+               <span className="px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold text-[#10B981] bg-[#10B981]/10 uppercase tracking-widest">{searchedUser.phoneNumber}</span>
+             </div>
+          </div>
+        </div>
+      )}
 
       {filteredFolders.length > 0 && (
         <div className="space-y-4">
@@ -513,6 +606,45 @@ const Inventory = () => {
                 </label>
               </div>
               <button type="submit" className="w-full py-3 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl font-bold">assign</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isAddFolderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-sm w-full p-6 relative border border-[var(--theme-border)]">
+            <button onClick={() => { setIsAddFolderModalOpen(false); setNewFolderName(""); }} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full"><X className="h-4 w-4" /></button>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">create directory</h2>
+            <form onSubmit={handleAddFolder} className="space-y-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">folder name</label>
+                <input type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder="e.g. Laptops" className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none" autoFocus />
+              </div>
+              <button type="submit" className="w-full py-3 mt-4 bg-[var(--theme-accent)] text-white rounded-xl font-bold hover:opacity-90">create folder</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-sm w-full p-6 relative border border-[var(--theme-border)]">
+            <button onClick={() => { setIsAddModalOpen(false); setNewItem({ identifier: "" }); setAddAssetImageFile(null); setAddAssetImagePreview(null); }} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full"><X className="h-4 w-4" /></button>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">add new asset</h2>
+            <form onSubmit={handleAddItem} className="space-y-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">asset identifier</label>
+                <input type="text" value={newItem.identifier} onChange={(e) => setNewItem({ ...newItem, identifier: e.target.value })} placeholder="e.g. MBP-2024-001" className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none" autoFocus />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">photo (optional)</label>
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[var(--theme-border)] rounded-xl cursor-pointer overflow-hidden relative">
+                  {addAssetImagePreview ? <img src={addAssetImagePreview} className="w-full h-full object-cover" /> : <div className="flex flex-col items-center text-[var(--theme-text-muted)]"><Upload className="h-6 w-6 mb-2" /><span className="text-xs font-semibold">click to upload</span></div>}
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageSelect(e, setAddAssetImageFile, setAddAssetImagePreview)} />
+                </label>
+              </div>
+              <button type="submit" className="w-full py-3 mt-4 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl font-bold">add asset</button>
             </form>
           </div>
         </div>
