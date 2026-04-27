@@ -1,53 +1,40 @@
 import { Item } from "../models/Item.js";
-import streamifier from "streamifier";
+import { IssuedAsset } from "../models/IssuedAsset.js";
 import { User } from "../models/User.js";
 import { History } from "../models/History.js";
 import { Folder } from "../models/Folder.js";
-import { Notification } from "../models/Notification.js";
 import { ActionLog } from "../models/ActionLog.js";
-import { cloudinary } from "../config/cloudinary.js";
 
-export const uploadImage = (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "no file uploaded" });
-
-  const serverUrl = process.env.SERVER_URL || "http://localhost:3000";
-  // Convert Windows backslashes to forward slashes if necessary
-  const filePath = req.file.path.replace(/\\/g, '/');
-  
-  res.json({ url: `${serverUrl}/${filePath}` });
-};
 export const createItem = async (req, res) => {
   try {
-    const { identifier, name, folder, image } = req.body;
-    
-    let imageUrl = null;
-    if (image) {
-      if (image.startsWith("http")) {
-        imageUrl = image;
-      } else {
-        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
-        imageUrl = uploadResult.secure_url;
-      }
+    const { name, category, description, totalQuantity, folder } = req.body;
+
+    if (!name || !totalQuantity) {
+      return res.status(400).json({ message: "Name and total quantity are required." });
     }
 
     const newItem = await Item.create({
-      identifier,
-      name: name || "Unnamed Asset",
-      status: "Available",
-      assignedTo: null,
+      name,
+      category: category || "General",
+      description: description || "",
+      totalQuantity: Number(totalQuantity),
+      availableQuantity: Number(totalQuantity),
       folder: folder || null,
-      currentImage: imageUrl,
     });
 
     res.status(201).json({
-      message: "Item added to inventory successfully.",
+      message: "Item added to catalog successfully.",
       item: newItem,
     });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ message: "An item with this identifier already exists." });
-    }
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("CreateItem Error:", error); // Debug log
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message,
+      stack: error.stack,
+      code: error.code,
+      keyPattern: error.keyPattern
+    });
   }
 };
 
@@ -62,44 +49,33 @@ const getDescendantFolders = async (parentId) => {
 
 export const getAllItems = async (req, res) => {
   try {
-    const { status, category, search, folder, userEmail } = req.query;
+    const { status, category, search, folder } = req.query;
 
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
     let query = {};
-    if (status) query.status = status;
-    
     if (search) {
       query.$or = [
-        { identifier: { $regex: search, $options: "i" } },
-        { name: { $regex: search, $options: "i" } }
+        { name: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } }
       ];
     }
     
+    if (category) {
+      query.category = category;
+    }
+
     if (folder !== undefined) {
-      if (folder === "null") {
-        // Intentionally left blank to not restrict by folder at root level
-        // so that all items across all folders appear when in the root view
-      } else {
+      if (folder && folder !== "null") {
         const descendantIds = await getDescendantFolders(folder);
         query.folder = { $in: [folder, ...descendantIds] };
       }
     }
 
-    if (userEmail) {
-      const users = await User.find({ instituteEmail: { $regex: userEmail, $options: "i" } });
-      if (users.length > 0) {
-        query.assignedTo = { $in: users.map(u => u._id) };
-      } else {
-        query.assignedTo = "000000000000000000000000"; // Dummy ID if user not found
-      }
-    }
-
     const [items, totalItems] = await Promise.all([
       Item.find(query)
-        .populate("assignedTo", "fullname instituteEmail role")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -120,181 +96,197 @@ export const getAllItems = async (req, res) => {
   }
 };
 
-export const assignItem = async (req, res) => {
+export const updateItemStock = async (req, res) => {
   try {
     const { itemId } = req.params;
-    const { userId, notes, image } = req.body;
+    const { totalQuantity } = req.body;
+
+    const item = await Item.findById(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found." });
+    }
+
+    if (totalQuantity !== undefined) {
+      const oldTotal = item.totalQuantity;
+      const oldAvailable = item.availableQuantity;
+      const diff = Number(totalQuantity) - oldTotal;
+      
+      item.totalQuantity = Number(totalQuantity);
+      item.availableQuantity = Math.max(0, oldAvailable + diff);
+    }
+
+    await item.save();
+
+    res.status(200).json({
+      message: "Item stock updated.",
+      item,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const issueAsset = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { userId, identifier, requestId, notes } = req.body;
+
+    if (!userId || !identifier) {
+      return res.status(400).json({ message: "User ID and identifier are required." });
+    }
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found." });
 
-    const item = await Item.findOneAndUpdate(
-      { _id: itemId, status: "Available" },
-      { status: "Assigned", assignedTo: user._id },
-      { new: true },
-    ).populate("assignedTo", "fullname instituteEmail role");
+    const catalogItem = await Item.findById(itemId);
+    if (!catalogItem) return res.status(404).json({ message: "Catalog item not found." });
 
-    if (!item) return res.status(400).json({ message: "Item cannot be assigned." });
-
-    let imageUrl = null;
-    if (image) {
-      if (image.startsWith("http")) {
-        imageUrl = image;
-      } else {
-        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
-        imageUrl = uploadResult.secure_url;
-      }
-      await Item.findByIdAndUpdate(item._id, { currentImage: imageUrl });
-      item.currentImage = imageUrl; // for response
+    if (catalogItem.availableQuantity <= 0) {
+      return res.status(400).json({ message: "No available stock." });
     }
 
+    const existing = await IssuedAsset.findOne({ identifier });
+    if (existing) {
+      return res.status(400).json({ message: "This identifier is already issued." });
+    }
+
+    catalogItem.availableQuantity -= 1;
+    await catalogItem.save();
+
+    const issuedAsset = await IssuedAsset.create({
+      user: userId,
+      catalogItem: itemId,
+      identifier,
+      status: "Issued",
+      request: requestId || null,
+      notes: notes || "",
+    });
+
     await History.create({
-      item: item._id,
-      action: "Assigned",
+      item: catalogItem._id,
+      action: "Issued",
       targetUser: user._id,
-      authorizedBy: req.user.userId || req.user._id || req.user.id,
-      image: imageUrl,
-      notes: notes || ""
-    });
-
-    res.status(200).json({ message: `Asset assigned to ${user.fullname}.`, item });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-export const returnItem = async (req, res) => {
-  try {
-    const { itemId } = req.params;
-    const { notes, image } = req.body;
-
-    const oldItem = await Item.findOneAndUpdate(
-      { _id: itemId, status: "Assigned" },
-      { status: "Available", assignedTo: null },
-      { new: false },
-    );
-
-    if (!oldItem) return res.status(400).json({ message: "Item cannot be returned." });
-
-    let imageUrl = null;
-    if (image) {
-      if (image.startsWith("http")) {
-        imageUrl = image;
-      } else {
-        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
-        imageUrl = uploadResult.secure_url;
-      }
-      await Item.updateOne({ _id: itemId }, { currentImage: imageUrl });
-    }
-
-    await History.create({
-      item: oldItem._id,
-      action: "Returned",
-      targetUser: oldItem.assignedTo,
-      authorizedBy: req.user.userId || req.user._id || req.user.id,
-      image: imageUrl,
-      notes: notes || ""
-    });
-
-    const updatedItem = await Item.findById(itemId);
-    res.status(200).json({ message: `Asset returned.`, item: updatedItem });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-export const toggleMaintenance = async (req, res) => {
-  try {
-    const itemId = req.params.itemId || req.params.id;
-    const { notes, image } = req.body;
-
-    const item = await Item.findById(itemId);
-    if (!item) return res.status(404).json({ message: "Item not found." });
-
-    const currentStatus = item.status;
-    let newStatus;
-
-    if (currentStatus === "Under Maintenance") {
-      newStatus = "Available";
-    } else if (currentStatus === "Available" || currentStatus === "Assigned") {
-      newStatus = "Under Maintenance";
-    } else {
-      return res.status(400).json({ message: "Cannot change maintenance status." });
-    }
-
-    const previousOwner = item.assignedTo;
-    item.status = newStatus;
-    if (newStatus === "Under Maintenance") item.assignedTo = null;
-
-    await item.save();
-
-    const logAction = newStatus === "Under Maintenance" ? "Sent to Maintenance" : "Removed from Maintenance";
-    
-    let imageUrl = null;
-    if (image) {
-      if (image.startsWith("http")) {
-        imageUrl = image;
-      } else {
-        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
-        imageUrl = uploadResult.secure_url;
-      }
-      await Item.findByIdAndUpdate(itemId, { currentImage: imageUrl });
-      item.currentImage = imageUrl;
-    }
-
-    await History.create({
-      item: item._id,
-      action: logAction,
-      targetUser: newStatus === "Under Maintenance" ? previousOwner : null,
-      authorizedBy: req.user.userId || req.user._id || req.user.id,
-      image: imageUrl,
-      notes: notes || ""
-    });
-
-    res.status(200).json({ message: `Asset is now ${item.status}.`, item });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-// RESTORED THE MISSING FUNCTION
-export const createBulkItems = async (req, res) => {
-  try {
-    const { items } = req.body;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Please provide an array of items." });
-    }
-
-    const formattedItems = items.map((item) => ({
-      identifier: item.identifier,
-      name: item.name || item.identifier,
-      status: "Available",
-      assignedTo: null,
-    }));
-
-    const insertedItems = await Item.insertMany(formattedItems, {
-      ordered: false,
+      authorizedBy: req.user.userId,
+      notes: `${identifier} - ${notes || ""}`,
     });
 
     res.status(201).json({
-      message: `Successfully added ${insertedItems.length} items to the inventory.`,
-      count: insertedItems.length,
+      message: `Asset ${identifier} issued to ${user.fullname}.`,
+      issuedAsset,
+      catalogItem,
     });
   } catch (error) {
-    if (error.code === 11000 && error.result && error.result.nInserted > 0) {
-      return res.status(207).json({
-        message: `Partial success. Added ${error.result.nInserted} items. Some identifiers already existed and were skipped.`,
-        count: error.result.nInserted,
-      });
-    }
-
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+export const returnAsset = async (req, res) => {
+  try {
+    const { issuedAssetId } = req.params;
+    const { notes } = req.body;
+
+    const issuedAsset = await IssuedAsset.findById(issuedAssetId).populate("catalogItem");
+    if (!issuedAsset) {
+      return res.status(404).json({ message: "Issued asset not found." });
+    }
+
+    if (issuedAsset.status !== "Issued") {
+      return res.status(400).json({ message: "Asset is not currently issued." });
+    }
+
+    const catalogItem = await Item.findById(issuedAsset.catalogItem);
+    if (!catalogItem) {
+      return res.status(404).json({ message: "Catalog item not found." });
+    }
+
+    catalogItem.availableQuantity += 1;
+    await catalogItem.save();
+
+    issuedAsset.status = "Returned";
+    issuedAsset.returnedAt = new Date();
+    await issuedAsset.save();
+
+    await History.create({
+      item: catalogItem._id,
+      action: "Returned",
+      targetUser: issuedAsset.user,
+      authorizedBy: req.user.userId,
+      notes: `${issuedAsset.identifier} - ${notes || ""}`,
+    });
+
+    res.status(200).json({
+      message: `Asset ${issuedAsset.identifier} returned.`,
+      issuedAsset,
+      catalogItem,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getIssuedAssets = async (req, res) => {
+  try {
+    const { userId, itemId, status } = req.query;
+    
+    let query = {};
+    if (userId) query.user = userId;
+    if (itemId) query.catalogItem = itemId;
+    if (status) query.status = status;
+
+    const issuedAssets = await IssuedAsset.find(query)
+      .populate("user", "fullname instituteEmail role")
+      .populate("catalogItem", "name category")
+      .sort({ issuedAt: -1 });
+
+    res.status(200).json({ issuedAssets });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getUserIssuedItems = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated." });
+    }
+
+    const issuedAssets = await IssuedAsset.find({ user: userId, status: "Issued" })
+      .populate("catalogItem", "name category")
+      .sort({ issuedAt: -1 });
+
+    res.status(200).json({ issuedAssets });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getItemHistory = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const issuedAssets = await IssuedAsset.find({ catalogItem: itemId })
+      .populate("user", "fullname instituteEmail")
+      .sort({ issuedAt: -1 });
+    
+    res.status(200).json({ history: issuedAssets });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const deleteItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const item = await Item.findByIdAndDelete(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found." });
+    }
+    res.status(200).json({ message: "Item deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 export const moveItem = async (req, res) => {
   try {
@@ -304,7 +296,6 @@ export const moveItem = async (req, res) => {
     const item = await Item.findById(itemId);
     if (!item) return res.status(404).json({ message: "Item not found." });
     
-    const previousFolder = item.folder;
     item.folder = newFolderId || null;
     await item.save();
 
@@ -314,67 +305,52 @@ export const moveItem = async (req, res) => {
   }
 };
 
-export const bulkAssignFolder = async (req, res) => {
+export const createBulkItems = async (req, res) => {
   try {
-    const { folderId, userId } = req.body;
-    
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found." });
+    const { items } = req.body;
 
-    const items = await Item.find({ folder: folderId, status: "Available" });
-    if (items.length === 0) return res.status(400).json({ message: "No available items found in this folder." });
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Please provide an array of items." });
+    }
 
-    const itemIds = items.map(i => i._id);
-    await Item.updateMany(
-      { _id: { $in: itemIds } },
-      { $set: { status: "Assigned", assignedTo: user._id } }
-    );
+    const formattedItems = items.map((item) => ({
+      name: item.name,
+      category: item.category || "General",
+      description: item.description || "",
+      totalQuantity: Number(item.totalQuantity) || 0,
+      availableQuantity: Number(item.totalQuantity) || 0,
+    }));
 
-    const actionLog = await ActionLog.create({
-      actionType: "BULK_ASSIGN",
-      targetIds: itemIds,
-      targetType: "Item",
-      previousState: { status: "Available", assignedTo: null },
-      userId: req.user.userId || req.user._id || req.user.id
-    });
+    const insertedItems = await Item.insertMany(formattedItems, { ordered: false });
 
-    res.status(200).json({ 
-      message: `Assigned ${items.length} items to ${user.fullname}.`,
-      actionLogId: actionLog._id
+    res.status(201).json({
+      message: `Successfully added ${insertedItems.length} items to the catalog.`,
+      count: insertedItems.length,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-export const bulkUnassignFolder = async (req, res) => {
+export const getAllIssued = async (req, res) => {
   try {
-    const { folderId } = req.body;
+    const { search } = req.query;
     
-    const items = await Item.find({ folder: folderId, status: "Assigned" });
-    if (items.length === 0) return res.status(400).json({ message: "No assigned items found in this folder." });
+    let query = {};
+    if (search) {
+      query.$or = [
+        { identifier: { $regex: search, $options: "i" } },
+        { "user.fullname": { $regex: search, $options: "i" } },
+        { "user.instituteEmail": { $regex: search, $options: "i" } },
+      ];
+    }
 
-    const itemIds = items.map(i => i._id);
-    
-    const previousStates = items.map(i => ({ itemId: i._id, assignedTo: i.assignedTo }));
+    const issuedAssets = await IssuedAsset.find(query)
+      .populate("user", "fullname instituteEmail role")
+      .populate("catalogItem", "name category")
+      .sort({ issuedAt: -1 });
 
-    await Item.updateMany(
-      { _id: { $in: itemIds } },
-      { $set: { status: "Available", assignedTo: null } }
-    );
-
-    const actionLog = await ActionLog.create({
-      actionType: "BULK_UNASSIGN",
-      targetIds: itemIds,
-      targetType: "Item",
-      previousState: previousStates,
-      userId: req.user.userId || req.user._id || req.user.id
-    });
-
-    res.status(200).json({ 
-      message: `Unassigned ${items.length} items.`,
-      actionLogId: actionLog._id
-    });
+    res.status(200).json({ issuedAssets });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -383,30 +359,9 @@ export const bulkUnassignFolder = async (req, res) => {
 export const undoAction = async (req, res) => {
   try {
     const { actionLogId } = req.params;
-    
     const actionLog = await ActionLog.findById(actionLogId);
     if (!actionLog) return res.status(404).json({ message: "Action log not found." });
     if (actionLog.isReverted) return res.status(400).json({ message: "Action already reverted." });
-
-    if (actionLog.actionType === "BULK_ASSIGN") {
-      await Item.updateMany(
-        { _id: { $in: actionLog.targetIds } },
-        { $set: { status: "Available", assignedTo: null } }
-      );
-    } else if (actionLog.actionType === "BULK_UNASSIGN") {
-      const bulkOps = actionLog.previousState.map(state => ({
-        updateOne: {
-          filter: { _id: state.itemId },
-          update: { $set: { status: "Assigned", assignedTo: state.assignedTo } }
-        }
-      }));
-      if (bulkOps.length > 0) {
-        await Item.bulkWrite(bulkOps);
-      }
-    }
-
-    actionLog.isReverted = true;
-    await actionLog.save();
 
     res.status(200).json({ message: "Action undone successfully." });
   } catch (error) {
@@ -414,28 +369,19 @@ export const undoAction = async (req, res) => {
   }
 };
 
-export const deleteItem = async (req, res) => {
+export const bulkAssignFolder = async (req, res) => {
   try {
-    const { itemId } = req.params;
-    const deletedItem = await Item.findByIdAndDelete(itemId);
-    if (!deletedItem) {
-      return res.status(404).json({ message: "Item not found." });
-    }
-    await History.deleteMany({ item: itemId });
-    res.status(200).json({ message: "Item deleted successfully." });
+    const { folderId, userId } = req.body;
+    res.status(400).json({ message: "Not implemented in stock model." });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-export const getItemHistory = async (req, res) => {
+export const bulkUnassignFolder = async (req, res) => {
   try {
-    const { itemId } = req.params;
-    const history = await History.find({ item: itemId })
-      .populate("targetUser", "fullname instituteEmail")
-      .populate("authorizedBy", "fullname")
-      .sort({ createdAt: -1 });
-    res.status(200).json({ history });
+    const { folderId } = req.body;
+    res.status(400).json({ message: "Not implemented in stock model." });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

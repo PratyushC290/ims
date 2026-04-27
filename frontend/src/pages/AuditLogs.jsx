@@ -8,14 +8,17 @@ import {
   Search,
   ArrowRight,
   Clock,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import Pagination from "../components/Pagination";
+import { exportAuditLogs } from "../utils/exportUtils";
 
 const AuditLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -78,6 +81,18 @@ const AuditLogs = () => {
     return <ArrowRight className="h-3 w-3" />;
   };
 
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      await exportAuditLogs(api);
+      toast.success("Audit log exported successfully");
+    } catch (error) {
+      toast.error("Failed to export audit log");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -97,6 +112,14 @@ const AuditLogs = () => {
             Complete history of all inventory actions.
           </p>
         </div>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+        >
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          Export Audit Log
+        </button>
       </div>
 
       <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">

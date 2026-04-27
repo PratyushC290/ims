@@ -1,0 +1,228 @@
+import { useState, useEffect } from "react";
+import { Package, Clock, CheckCircle, XCircle, Plus, MonitorSmartphone, Cpu, Cable, Headphones,Camera, Search } from "lucide-react";
+import toast from "react-hot-toast";
+import api from "../api";
+import RequestModal from "../components/RequestModal";
+
+const StudentPortal = () => {
+  const [issuedItems, setIssuedItems] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [userProfile, setUserProfile] = useState({});
+
+  useEffect(() => {
+    getCurrentUserId();
+    fetchData();
+  }, []);
+
+  const getCurrentUserId = () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserProfile(payload);
+        return payload.userId;
+      }
+    } catch (e) {
+      console.error("Failed to decode token", e);
+    }
+    return null;
+  };
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [issuedRes, requestsRes, catalogRes] = await Promise.all([
+        api.get("/items/my-issued"),
+        api.get("/requests/my-requests"),
+        api.get("/items"),
+      ]);
+
+      const issued = issuedRes.data.issuedAssets || [];
+      setIssuedItems(issued);
+      setMyRequests(requestsRes.data.requests || []);
+
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Pending": return "bg-amber-500/20 text-amber-400";
+      case "Approved": return "bg-blue-500/20 text-blue-400";
+      case "Rejected": return "bg-red-500/20 text-red-400";
+      case "Fulfilled": return "bg-green-500/20 text-green-400";
+      default: return "bg-gray-500/20 text-gray-400";
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Pending": return Clock;
+      case "Approved": return CheckCircle;
+      case "Rejected": return XCircle;
+      case "Fulfilled": return CheckCircle;
+      default: return Clock;
+    }
+  };
+
+  const handleRequestSubmitted = (newRequest) => {
+    setMyRequests(prev => [newRequest, ...prev]);
+    setShowRequestModal(false);
+    toast.success("Request submitted successfully!");
+  };
+
+  return (
+    <div className="min-h-screen">
+      <RequestModal
+        isOpen={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        onSuccess={handleRequestSubmitted}
+      />
+
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[var(--theme-text)]">
+              Welcome back, {userProfile.fullname?.split(' ')[0] || 'Student'}!
+            </h1>
+            <p className="text-[var(--theme-text-muted)] mt-1">
+              Manage your assets and requests from here
+            </p>
+          </div>
+          <button
+            onClick={() => setShowRequestModal(true)}
+            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="h-5 w-5" />
+            Request Hardware
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-[var(--theme-panel)] rounded-3xl border border-[var(--theme-border)] p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-blue-600/20 rounded-xl">
+              <Package className="h-5 w-5 text-blue-400" />
+            </div>
+            <h2 className="text-xl font-bold text-[var(--theme-text)]">My Issued Assets</h2>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : issuedItems.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <div className="w-16 h-16 mx-auto mb-4 bg-[var(--theme-bg)] rounded-full flex items-center justify-center">
+                <Package className="h-8 w-8 text-[var(--theme-text-muted)]" />
+              </div>
+              <p className="text-[var(--theme-text-muted)] font-medium">No assets assigned yet</p>
+              <p className="text-sm text-[var(--theme-text-muted)] opacity-70 mt-1">
+                Request hardware using the button above
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {issuedItems.map(item => (
+                <div
+                  key={item._id}
+                  className="bg-[var(--theme-bg)] rounded-2xl p-4 border border-[var(--theme-border)] hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center">
+                      <MonitorSmartphone className="h-6 w-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[var(--theme-text)]">
+                        {item.catalogItem?.name || item.identifier}
+                      </h3>
+                      <p className="text-sm text-[var(--theme-text-muted)] font-mono">
+                        {item.identifier}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[var(--theme-text-muted)]">
+                    Issued: {new Date(item.issuedAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-[var(--theme-panel)] rounded-3xl border border-[var(--theme-border)] p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-purple-600/20 rounded-xl">
+              <Clock className="h-5 w-5 text-purple-400" />
+            </div>
+            <h2 className="text-xl font-bold text-[var(--theme-text)]">My Requests</h2>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            </div>
+          ) : myRequests.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <div className="w-16 h-16 mx-auto mb-4 bg-[var(--theme-bg)] rounded-full flex items-center justify-center">
+                <Clock className="h-8 w-8 text-[var(--theme-text-muted)]" />
+              </div>
+              <p className="text-[var(--theme-text-muted)] font-medium">No requests yet</p>
+              <p className="text-sm text-[var(--theme-text-muted)] opacity-70 mt-1">
+                Create a request to get hardware
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+              {myRequests.map(request => {
+                const StatusIcon = getStatusIcon(request.status);
+                return (
+                  <div
+                    key={request._id}
+                    className="bg-[var(--theme-bg)] rounded-2xl p-4 border border-[var(--theme-border)] hover:border-purple-500/30 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-[var(--theme-text)]">
+                          {request.requestedItem}
+                        </h3>
+                        <p className="text-sm text-[var(--theme-text-muted)] mt-0.5 line-clamp-2">
+                          {request.reason}
+                        </p>
+                      </div>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                        <StatusIcon className="h-3.5 w-3.5" />
+                        {request.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--theme-text-muted)] opacity-70">
+                      {new Date(request.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudentPortal;

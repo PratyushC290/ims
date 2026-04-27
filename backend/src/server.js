@@ -12,6 +12,7 @@ import userRoutes from "./routes/user.routes.js";
 import statsRoutes from "./routes/stats.routes.js";
 import historyRoutes from './routes/history.routes.js';
 import notificationRoutes from "./routes/notification.routes.js";
+import requestRoutes from "./routes/request.routes.js";
 
 
 connectDB();
@@ -31,6 +32,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/requests", requestRoutes);
 
 app.get("/api/health", (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;

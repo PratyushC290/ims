@@ -7,6 +7,7 @@ import {
   Wrench,
   AlertCircle,
   Activity,
+  Clock,
 } from "lucide-react";
 import {
   PieChart,
@@ -50,7 +51,7 @@ const Dashboard = () => {
 
   if (!data) return null;
 
-  const { inventoryOverview, userOverview, recentActivity } = data;
+  const { inventoryOverview, userOverview, requestsOverview, recentActivity } = data;
 
   // Formatting data for the Recharts Donut Chart
   const chartData = [
@@ -92,6 +93,13 @@ const Dashboard = () => {
       icon: Wrench,
       color: "text-amber-500",
       bg: "bg-amber-500/10",
+    },
+    {
+      title: "Pending Requests",
+      value: requestsOverview?.pending || 0,
+      icon: Clock,
+      color: "text-purple-500",
+      bg: "bg-purple-500/10",
     },
   ];
 

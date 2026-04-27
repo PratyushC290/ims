@@ -2,31 +2,32 @@ import mongoose, { Schema } from "mongoose";
 
 const itemSchema = new Schema(
   {
-    identifier: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
     name: {
       type: String,
       required: true,
-      default: "Unnamed Asset",
       trim: true,
     },
-    currentImage: {
+    category: {
       type: String,
-      default: null,
+      trim: true,
+      default: "General",
     },
-    status: {
+    description: {
       type: String,
-      enum: ["Available", "Assigned", "Under Maintenance", "Retired"],
-      default: "Available",
+      trim: true,
+      default: "",
     },
-    assignedTo: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
+    totalQuantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    availableQuantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
     folder: {
       type: Schema.Types.ObjectId,
@@ -39,11 +40,11 @@ const itemSchema = new Schema(
   },
 );
 
-itemSchema.index({ identifier: "text" });
+itemSchema.index({ name: "text" });
+itemSchema.index({ category: 1 });
+itemSchema.index({ availableQuantity: 1 });
 
-itemSchema.index({ status: 1 });
-itemSchema.index({ assignedTo: 1 });
-itemSchema.index({ folder: 1 });
-itemSchema.index({ createdAt: -1 });
+itemSchema.set("toJSON", { virtuals: true });
+itemSchema.set("toObject", { virtuals: true });
 
 export const Item = mongoose.model("Item", itemSchema);

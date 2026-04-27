@@ -97,7 +97,7 @@ const sendOtpEmail = async (email, otpCode) => {
 
 export const requestOtp = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, loginType } = req.body;
     const user = await User.findOne({ instituteEmail: email });
 
     if (!user) {
@@ -116,9 +116,15 @@ export const requestOtp = async (req, res) => {
         .json({ message: "Your account request was rejected." });
     }
 
-    if (user.role !== "Admin" && user.role !== "Super Admin") {
+    const allowedRoles = loginType === "student" 
+      ? ["Student"] 
+      : ["Admin", "Super Admin"];
+    
+    if (!allowedRoles.includes(user.role)) {
       return res.status(403).json({
-        message: "Access Denied.",
+        message: loginType === "student" 
+          ? "Please use the student login page." 
+          : "Please use the admin login page.",
       });
     }
 
@@ -142,7 +148,7 @@ export const requestOtp = async (req, res) => {
 
 export const verifyOtp = async (req, res) => {
   try {
-    const { email, otpCode } = req.body;
+    const { email, otpCode, loginType } = req.body;
 
     const validOtp = await Otp.findOne({ email });
 
@@ -183,14 +189,20 @@ export const verifyOtp = async (req, res) => {
         .json({ message: "Your account request was rejected." });
     }
 
-    if (user.role !== "Admin" && user.role !== "Super Admin") {
+    const allowedRoles = loginType === "student" 
+      ? ["Student"] 
+      : ["Admin", "Super Admin"];
+    
+    if (!allowedRoles.includes(user.role)) {
       return res.status(403).json({
-        message: "Access Denied. Your role may have changed during login.",
+        message: loginType === "student" 
+          ? "Please use the student login page." 
+          : "Please use the admin login page.",
       });
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role, fullname: user.fullname, email: user.instituteEmail },
+      { userId: user._id, role: user.role, fullname: user.fullname, email: user.instituteEmail, name: user.fullname },
       process.env.JWT_SECRET,
       { expiresIn: "8h" },
     );

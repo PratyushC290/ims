@@ -1,18 +1,15 @@
 import express from "express";
 import {
-  createItem, getAllItems, assignItem, returnItem, createBulkItems,
-  toggleMaintenance, moveItem, bulkAssignFolder, bulkUnassignFolder,
-  undoAction, deleteItem, getItemHistory, uploadImage
+  createItem, getAllItems, updateItemStock,
+  issueAsset, returnAsset, getIssuedAssets, getItemHistory,
+  deleteItem, moveItem, createBulkItems, getAllIssued,
+  undoAction, bulkAssignFolder, bulkUnassignFolder, getUserIssuedItems
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
-import { upload } from "../config/cloudinary.js";
 
 const router = express.Router();
 
 router.use(protectRoute);
-
-// the missing route that was causing your 404
-router.post("/upload", upload.single("image"), uploadImage);
 
 router.post("/bulk", createBulkItems);
 router.post("/bulk-assign-folder", bulkAssignFolder);
@@ -20,11 +17,13 @@ router.post("/bulk-unassign-folder", bulkUnassignFolder);
 
 router.post("/", createItem);
 router.get("/", getAllItems);
+router.get("/issued", getAllIssued);
+router.get("/my-issued", getUserIssuedItems);
 router.get("/:itemId/history", getItemHistory);
 
-router.put("/:itemId/assign", assignItem);
-router.put("/:itemId/return", returnItem);
-router.put("/:itemId/maintenance", toggleMaintenance);
+router.put("/:itemId/stock", updateItemStock);
+router.put("/:itemId/issue", issueAsset);
+router.put("/:itemId/return", returnAsset);
 
 router.put("/:itemId/move", moveItem);
 router.delete("/:itemId", deleteItem);

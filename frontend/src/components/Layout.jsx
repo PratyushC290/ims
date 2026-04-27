@@ -1,6 +1,6 @@
 // edited by abhiram parupudi 2401cs21
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Sun, Moon, LayoutDashboard, MonitorSmartphone, Users, LogOut, Bell, CheckCheck, History, AlertTriangle } from "lucide-react";
+import { Sun, Moon, LayoutDashboard, MonitorSmartphone, Users, LogOut, Bell, CheckCheck, History, AlertTriangle, ShoppingCart, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import api from "../api";
@@ -11,7 +11,7 @@ const Layout = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-  const [userProfile, setUserProfile] = useState({ name: "User", initial: "U", email: "" });
+  const [userProfile, setUserProfile] = useState({ name: "User", initial: "U", email: "", role: "Admin" });
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("app_theme") === "dark");
   const location = useLocation();
   const navigate = useNavigate();
@@ -41,16 +41,22 @@ const Layout = () => {
     }
   }, [isDarkMode]);
 
-  const navItems = [
-    { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
-    {
-      name: "Inventory",
-      path: "/dashboard/inventory",
-      icon: MonitorSmartphone,
-    },
-    { name: "Directory", path: "/dashboard/users", icon: Users },
-    { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
-  ];
+  const isStudent = userProfile.role === "Student";
+  
+  const navItems = isStudent
+    ? []
+    : [
+        { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
+        {
+          name: "Inventory",
+          path: "/dashboard/inventory",
+          icon: MonitorSmartphone,
+        },
+        { name: "Directory", path: "/dashboard/users", icon: Users },
+        { name: "Hardware Requests", path: "/dashboard/requests", icon: ShoppingCart },
+        { name: "No Dues", path: "/dashboard/no-dues", icon: FileText },
+        { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
+      ];
 
   const handleLogout = () => {
     setConfirmModal({ isOpen: true });
@@ -120,7 +126,8 @@ const Layout = () => {
         setUserProfile({
           name: payload.name || payload.fullname || "Admin",
           initial: (payload.email || payload.instituteEmail || "U").charAt(0).toUpperCase(),
-          email: payload.email || payload.instituteEmail || ""
+          email: payload.email || payload.instituteEmail || "",
+          role: payload.role || "Admin"
         });
       }
     } catch (e) {
@@ -130,6 +137,11 @@ const Layout = () => {
     const loadNotifications = async () => {
       await fetchNotifications();
     };
+    
+    if (userProfile.role === "Student" && location.pathname === "/dashboard") {
+      navigate("/dashboard/my-portal");
+    }
+    
     loadNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
@@ -161,48 +173,49 @@ const Layout = () => {
   };
 
   return (
-    // Dynamic background wrapping the entire screen
     <div className="min-h-screen bg-[var(--theme-bg)] flex transition-colors duration-300">
       
-      {/* SIDEBAR */}
-      <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-[var(--theme-panel)] border-r border-[var(--theme-border)] shadow-sm transition-colors duration-300">
-        <div className="p-6 flex items-center gap-3">
-          <div className="h-10 w-10 bg-[var(--theme-bg)] rounded-xl shadow-sm flex items-center justify-center border border-[var(--theme-border)]">
-            <MonitorSmartphone className="h-5 w-5 text-[var(--theme-text)]" />
+      {/* SIDEBAR - Hidden for students */}
+      {!isStudent && (
+        <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-[var(--theme-panel)] border-r border-[var(--theme-border)] shadow-sm transition-colors duration-300">
+          <div className="p-6 flex items-center gap-3">
+            <div className="h-10 w-10 bg-[var(--theme-bg)] rounded-xl shadow-sm flex items-center justify-center border border-[var(--theme-border)]">
+              <MonitorSmartphone className="h-5 w-5 text-[var(--theme-text)]" />
+            </div>
+            <h1 className="text-xl font-bold text-[var(--theme-text)] tracking-tight">
+              IMS Portal
+            </h1>
           </div>
-          <h1 className="text-xl font-bold text-[var(--theme-text)] tracking-tight">
-            IMS Portal
-          </h1>
-        </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
+          <nav className="flex-1 px-4 py-6 space-y-2">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              const Icon = item.icon;
 
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
-                  isActive
-                    ? "bg-[var(--theme-bg)] shadow-sm border border-[var(--theme-border)] text-[var(--theme-accent)]"
-                    : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
-                }`}
-              >
-                <Icon
-                  className={`h-5 w-5 ${isActive ? "text-[var(--theme-accent)]" : "text-[var(--theme-text-muted)]"}`}
-                />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                    isActive
+                      ? "bg-[var(--theme-bg)] shadow-sm border border-[var(--theme-border)] text-[var(--theme-accent)]"
+                      : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 ${isActive ? "text-[var(--theme-accent)]" : "text-[var(--theme-text-muted)]"}`}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
 
-      </aside>
+        </aside>
+      )}
 
       {/* MAIN CONTENT WRAPPER */}
-      <main className="flex-1 ml-64 flex flex-col min-h-screen">
+      <main className={`flex-1 flex flex-col min-h-screen ${isStudent ? 'ml-0' : 'ml-64'}`}>
         
         {/* TOP HEADER */}
         <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-[var(--theme-panel)] border-b border-[var(--theme-border)] transition-colors duration-300">
@@ -219,6 +232,7 @@ const Layout = () => {
             >
               {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+            {!isStudent && (
             <div className="relative">
               <button
                 onClick={() => {
@@ -293,6 +307,7 @@ const Layout = () => {
                 </div>
               )}
             </div>
+            )}
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
