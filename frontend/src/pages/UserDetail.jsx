@@ -91,9 +91,9 @@ const UserDetail = () => {
               </h2>
               <span
                 className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border mt-2
-                ${user.role === "Super Admin" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : ""}
-                ${user.role === "Admin" ? "bg-blue-50 text-blue-700 border-blue-200" : ""}
-                ${["Student", "Staff", "Faculty"].includes(user.role) ? "bg-gray-50 text-gray-700 border-gray-200" : ""}
+                ${user.role === "Super Admin" ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" : ""}
+                ${user.role === "Admin" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : ""}
+                ${["Student", "Staff", "Faculty"].includes(user.role) ? "bg-gray-500/10 text-gray-500 border-gray-500/20" : ""}
               `}
               >
                 {user.role}

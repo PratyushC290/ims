@@ -1,14 +1,11 @@
-import 'dotenv/config';
 import { v2 as cloudinary } from 'cloudinary';
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: 'dlw0qwuw8',
+  api_key: '326671696164543',
+  api_secret: 'aJ5tm_5b0bQbBaNk5SpLYW5slgI',
 });
 
-console.log("pinging cloudinary servers...");
-
-cloudinary.api.ping()
-  .then(res => console.log("✅ success! connected to cloudinary:", res))
-  .catch(err => console.error("❌ failed! the real error is:", err));
+cloudinary.uploader.upload('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', { folder: 'ims_returns' })
+  .then(res => console.log('success', res.secure_url))
+  .catch(err => console.error('fail', err));

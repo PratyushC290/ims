@@ -59,20 +59,20 @@ const AuditLogs = () => {
     });
   };
 
-  const getActionStyle = (action) => {
-    switch (action) {
-      case "Assigned":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "Returned":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "Sent to Maintenance":
-        return "bg-amber-50 text-amber-700 border-amber-200";
-      case "Removed from Maintenance":
-        return "bg-green-50 text-green-700 border-green-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
+    const getActionStyle = (action) => {
+      switch (action) {
+        case "Assigned":
+          return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+        case "Returned":
+          return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+        case "Sent to Maintenance":
+          return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+        case "Removed from Maintenance":
+          return "bg-green-500/10 text-green-500 border-green-500/20";
+        default:
+          return "bg-gray-500/10 text-gray-500 border-gray-500/20";
+      }
+    };
 
   const getActionIcon = (action) => {
     return <ArrowRight className="h-3 w-3" />;
@@ -90,25 +90,25 @@ const AuditLogs = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-[var(--theme-text)] tracking-tight">
             Audit Logs
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-[var(--theme-text-muted)] mt-1">
             Complete history of all inventory actions.
           </p>
         </div>
       </div>
 
-      <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-        <div className="p-4 border-b border-gray-100/50">
+      <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+        <div className="p-4 border-b border-[var(--theme-border)]">
           <div className="relative w-80">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" />
             <input
               type="text"
               placeholder="Search by item, user, or action..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
         </div>
@@ -116,28 +116,28 @@ const AuditLogs = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/40 border-b border-gray-100">
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+              <tr className="bg-[var(--theme-bg)] border-b border-[var(--theme-border)]">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Action
                 </th>
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Item
                 </th>
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   User
                 </th>
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Authorized By
                 </th>
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Date & Time
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100/50">
+            <tbody className="divide-y divide-[var(--theme-border)]">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-500">
+                  <td colSpan={5} className="py-12 text-center text-[var(--theme-text-muted)]">
                     No audit logs found.
                   </td>
                 </tr>
@@ -145,7 +145,7 @@ const AuditLogs = () => {
                 filteredLogs.map((log) => (
                   <tr
                     key={log._id}
-                    className="hover:bg-white/40 transition-colors"
+                    className="hover:bg-[var(--theme-bg)] transition-colors"
                   >
                     <td className="py-4 px-6">
                       <span
@@ -158,14 +158,14 @@ const AuditLogs = () => {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
-                          <MonitorSmartphone className="h-4 w-4 text-gray-500" />
+                        <div className="h-8 w-8 rounded-lg bg-[var(--theme-bg)] flex items-center justify-center border border-[var(--theme-border)]">
+                          <MonitorSmartphone className="h-4 w-4 text-[var(--theme-text-muted)]" />
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-[var(--theme-text)]">
                             {log.item?.name || "Unknown"}
                           </div>
-                          <div className="text-xs text-gray-500 font-mono">
+                          <div className="text-xs text-[var(--theme-text-muted)] font-mono">
                             {log.item?.identifier || "N/A"}
                           </div>
                         </div>
@@ -173,17 +173,17 @@ const AuditLogs = () => {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
+                        <User className="h-4 w-4 text-[var(--theme-text-muted)]" />
+                        <span className="text-sm text-[var(--theme-text)]">
                           {log.targetUser?.fullname || "Unknown"}
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-sm text-gray-500">
+                    <td className="py-4 px-6 text-sm text-[var(--theme-text-muted)]">
                       {log.authorizedBy?.fullname || "System"}
                     </td>
                     <td className="py-4 px-6">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-2 text-sm text-[var(--theme-text-muted)]">
                         <Clock className="h-4 w-4" />
                         {formatDate(log.createdAt)}
                       </div>

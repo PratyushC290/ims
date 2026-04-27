@@ -110,12 +110,14 @@ const Inventory = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const [searchedUsers, setSearchedUsers] = useState([]);
+
   useEffect(() => {
     if (filterEmail && users.length > 0) {
-      const user = users.find(u => u.instituteEmail.toLowerCase().includes(filterEmail.toLowerCase()));
-      setSearchedUser(user || null);
+      const matched = users.filter(u => u.instituteEmail.toLowerCase().includes(filterEmail.toLowerCase()));
+      setSearchedUsers(matched);
     } else {
-      setSearchedUser(null);
+      setSearchedUsers([]);
     }
   }, [filterEmail, users]);
 
@@ -425,25 +427,29 @@ const Inventory = () => {
         </div>
       </div>
 
-      {searchedUser && filterEmail && (
-        <div className="bg-[var(--theme-panel)] rounded-2xl md:rounded-[2rem] shadow-sm border border-[var(--theme-border)] p-4 md:p-6 flex items-center gap-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--theme-accent)]/5 rounded-bl-full -z-10"></div>
-          <div className="relative">
-             <div className="absolute inset-0 bg-[var(--theme-accent)]/20 rounded-full blur-xl"></div>
-             <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-[var(--theme-bg)] shadow-md bg-[var(--theme-accent)] flex items-center justify-center text-[var(--theme-panel)] text-2xl md:text-4xl font-extrabold uppercase">
-                {searchedUser.fullname.charAt(0)}
-             </div>
-          </div>
-          <div className="flex-1">
-             <h2 className="text-xl md:text-2xl font-bold text-[var(--theme-text)]">{searchedUser.fullname}</h2>
-             <p className="text-sm font-medium text-[var(--theme-text-muted)] flex items-center gap-2 mt-1">
-               <span className="truncate">{searchedUser.instituteEmail}</span>
-             </p>
-             <div className="flex items-center gap-3 mt-3">
-               <span className="px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold text-[var(--theme-accent)] bg-[var(--theme-accent)]/10 uppercase tracking-widest">{searchedUser.role}</span>
-               <span className="px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold text-[#10B981] bg-[#10B981]/10 uppercase tracking-widest">{searchedUser.phoneNumber}</span>
-             </div>
-          </div>
+      {searchedUsers.length > 0 && filterEmail && (
+        <div className="space-y-4">
+          {searchedUsers.map((user) => (
+            <div key={user._id} className="bg-[var(--theme-panel)] rounded-2xl md:rounded-[2rem] shadow-sm border border-[var(--theme-border)] p-4 md:p-6 flex items-center gap-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full -z-10"></div>
+              <div className="relative">
+                 <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl"></div>
+                 <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-[var(--theme-bg)] shadow-md bg-blue-500 flex items-center justify-center text-white text-2xl md:text-4xl font-extrabold uppercase">
+                    {user.fullname.charAt(0)}
+                 </div>
+              </div>
+              <div className="flex-1">
+                 <h2 className="text-xl md:text-2xl font-bold text-[var(--theme-text)]">{user.fullname}</h2>
+                 <p className="text-sm font-medium text-[var(--theme-text-muted)] flex items-center gap-2 mt-1">
+                   <span className="truncate">{user.instituteEmail}</span>
+                 </p>
+                 <div className="flex items-center gap-3 mt-3">
+                   <span className="px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold text-blue-500 bg-blue-500/10 uppercase tracking-widest">{user.role}</span>
+                   <span className="px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold text-emerald-500 bg-emerald-500/10 uppercase tracking-widest">{user.phoneNumber}</span>
+                 </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

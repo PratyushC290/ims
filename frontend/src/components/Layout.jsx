@@ -207,6 +207,12 @@ const Layout = () => {
         {/* TOP HEADER */}
         <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-[var(--theme-panel)] border-b border-[var(--theme-border)] transition-colors duration-300">
           <div className="flex items-center gap-4">
+            {(showNotifications || showProfileMenu) && (
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => { setShowNotifications(false); setShowProfileMenu(false); }}
+              />
+            )}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)} 
               className="p-2.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] bg-[var(--theme-bg)] rounded-full border border-[var(--theme-border)] shadow-sm transition-all"

@@ -190,7 +190,7 @@ export const verifyOtp = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id, role: user.role, fullname: user.fullname, email: user.instituteEmail },
       process.env.JWT_SECRET,
       { expiresIn: "8h" },
     );

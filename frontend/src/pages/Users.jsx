@@ -158,10 +158,10 @@ const Users = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-[var(--theme-text)] tracking-tight">
             Institution Directory
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-[var(--theme-text-muted)] mt-1">
             Manage staff, students, and system access.
           </p>
         </div>
@@ -180,8 +180,8 @@ const Users = () => {
             className={`px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium border
             ${
               currentUserRole === "Super Admin"
-                ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                : "bg-blue-50 text-blue-700 border-blue-200"
+                ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20"
+                : "bg-blue-500/10 text-blue-500 border-blue-500/20"
             }`}
           >
             {currentUserRole === "Super Admin" ? (
@@ -280,9 +280,9 @@ const Users = () => {
                   <td className="py-4 px-6">
                     <span
                       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-                      ${user.role === "Super Admin" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : ""}
-                      ${user.role === "Admin" ? "bg-blue-50 text-blue-700 border-blue-200" : ""}
-                      ${["Student", "Staff", "Faculty"].includes(user.role) ? "bg-gray-50 text-gray-700 border-gray-200" : ""}
+                      ${user.role === "Super Admin" ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" : ""}
+                      ${user.role === "Admin" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : ""}
+                      ${["Student", "Staff", "Faculty"].includes(user.role) ? "bg-gray-500/10 text-gray-500 border-gray-500/20" : ""}
                     `}
                     >
                       {user.role}
@@ -291,9 +291,9 @@ const Users = () => {
                   <td className="py-4 px-6">
                     <span
                       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-                      ${user.accountStatus === "Approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}
-                      ${user.accountStatus === "Pending" ? "bg-orange-50 text-orange-700 border-orange-200" : ""}
-                      ${user.accountStatus === "Deactivated" ? "bg-red-50 text-red-700 border-red-200" : ""}
+                      ${user.accountStatus === "Approved" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : ""}
+                      ${user.accountStatus === "Pending" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : ""}
+                      ${user.accountStatus === "Deactivated" ? "bg-red-500/10 text-red-500 border-red-500/20" : ""}
                     `}
                     >
                       {user.accountStatus}
@@ -308,13 +308,13 @@ const Users = () => {
                           <>
                             <button
                               onClick={() => handleReviewUser(user._id, "Approved")}
-                              className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-100"
+                              className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition-colors bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg border border-emerald-500/20"
                             >
                               Approve
                             </button>
                             <button
                               onClick={() => handleReviewUser(user._id, "Rejected")}
-                              className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
+                              className="text-sm text-red-500 hover:text-red-400 font-medium transition-colors bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg border border-red-500/20"
                             >
                               Reject
                             </button>
@@ -322,7 +322,7 @@ const Users = () => {
                         ) : user.accountStatus === "Approved" && user.role === "Admin" ? (
                           <button
                             onClick={() => handleDemoteRole(user._id, user.fullname)}
-                            className="text-sm text-orange-600 hover:text-orange-800 font-medium transition-colors bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-100"
+                            className="text-sm text-orange-500 hover:text-orange-400 font-medium transition-colors bg-orange-500/10 hover:bg-orange-500/20 px-3 py-1.5 rounded-lg border border-orange-500/20"
                           >
                             Revoke Admin
                           </button>
@@ -331,7 +331,7 @@ const Users = () => {
                         )}
                         <button
                           onClick={() => handleDeleteUser(user._id, user.fullname)}
-                          className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
+                          className="text-sm text-red-500 hover:text-red-400 font-medium transition-colors bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg border border-red-500/20"
                         >
                           Delete
                         </button>

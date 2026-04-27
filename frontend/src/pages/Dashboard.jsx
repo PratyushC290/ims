@@ -69,29 +69,29 @@ const Dashboard = () => {
       title: "Total Assets",
       value: inventoryOverview.total,
       icon: Package,
-      color: "text-gray-800",
-      bg: "bg-gray-100",
+      color: "text-gray-500",
+      bg: "bg-gray-500/10",
     },
     {
       title: "Available",
       value: inventoryOverview.available,
       icon: CheckCircle2,
-      color: "text-emerald-600",
-      bg: "bg-emerald-100",
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
     },
     {
       title: "Assigned",
       value: inventoryOverview.assigned,
       icon: UserCheck,
-      color: "text-blue-600",
-      bg: "bg-blue-100",
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
     },
     {
       title: "In Maintenance",
       value: inventoryOverview.maintenance,
       icon: Wrench,
-      color: "text-amber-600",
-      bg: "bg-amber-100",
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
     },
   ];
 
@@ -191,17 +191,17 @@ const Dashboard = () => {
               </h4>
             </div>
 
-            <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100">
-              <p className="text-sm text-orange-600 font-medium">
+            <div className="bg-orange-500/10 rounded-2xl p-5 border border-orange-500/20">
+              <p className="text-sm text-orange-500 font-medium">
                 Pending Approvals
               </p>
               <div className="flex items-end justify-between mt-2">
-                <h4 className="text-3xl font-bold text-orange-700">
+                <h4 className="text-3xl font-bold text-orange-600">
                   {userOverview.pendingRequests}
                 </h4>
                 <button
                   onClick={() => navigate("/dashboard/users")}
-                  className="text-sm font-semibold text-orange-700 hover:underline"
+                  className="text-sm font-semibold text-orange-500 hover:underline"
                 >
                   Review &rarr;
                 </button>
@@ -259,9 +259,9 @@ const Dashboard = () => {
                     <td className="py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-                        ${item.status === "Available" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}
-                        ${item.status === "Assigned" ? "bg-blue-50 text-blue-700 border-blue-200" : ""}
-                        ${item.status === "Under Maintenance" ? "bg-amber-50 text-amber-700 border-amber-200" : ""}
+                        ${item.status === "Available" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : ""}
+                        ${item.status === "Assigned" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : ""}
+                        ${item.status === "Under Maintenance" ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : ""}
                       `}
                       >
                         {item.status}

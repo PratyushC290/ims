@@ -2,13 +2,20 @@ import { Item } from "../models/Item.js";
 import streamifier from "streamifier";
 import { User } from "../models/User.js";
 import { History } from "../models/History.js";
+import { Folder } from "../models/Folder.js";
 import { Notification } from "../models/Notification.js";
 import { ActionLog } from "../models/ActionLog.js";
 import { cloudinary } from "../config/cloudinary.js";
 
-// helper function to safely pipe memory directly to cloudinary
+export const uploadImage = (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "no file uploaded" });
 
-
+  const serverUrl = process.env.SERVER_URL || "http://localhost:3000";
+  // Convert Windows backslashes to forward slashes if necessary
+  const filePath = req.file.path.replace(/\\/g, '/');
+  
+  res.json({ url: `${serverUrl}/${filePath}` });
+};
 export const createItem = async (req, res) => {
   try {
     const { identifier, name, folder, image } = req.body;
@@ -44,6 +51,15 @@ export const createItem = async (req, res) => {
   }
 };
 
+const getDescendantFolders = async (parentId) => {
+  const children = await Folder.find({ parent: parentId });
+  let descendants = [...children.map(c => c._id)];
+  for (let child of children) {
+    descendants = descendants.concat(await getDescendantFolders(child._id));
+  }
+  return descendants;
+};
+
 export const getAllItems = async (req, res) => {
   try {
     const { status, category, search, folder, userEmail } = req.query;
@@ -54,13 +70,22 @@ export const getAllItems = async (req, res) => {
 
     let query = {};
     if (status) query.status = status;
+    
     if (search) {
       query.$or = [
         { identifier: { $regex: search, $options: "i" } },
         { name: { $regex: search, $options: "i" } }
       ];
-    } else {
-      if (folder !== undefined) query.folder = folder === "null" ? null : folder;
+    }
+    
+    if (folder !== undefined) {
+      if (folder === "null") {
+        // Intentionally left blank to not restrict by folder at root level
+        // so that all items across all folders appear when in the root view
+      } else {
+        const descendantIds = await getDescendantFolders(folder);
+        query.folder = { $in: [folder, ...descendantIds] };
+      }
     }
 
     if (userEmail) {
@@ -119,8 +144,8 @@ export const assignItem = async (req, res) => {
         const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
         imageUrl = uploadResult.secure_url;
       }
-      item.currentImage = imageUrl;
-      await item.save();
+      await Item.findByIdAndUpdate(item._id, { currentImage: imageUrl });
+      item.currentImage = imageUrl; // for response
     }
 
     await History.create({
@@ -213,8 +238,8 @@ export const toggleMaintenance = async (req, res) => {
         const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
         imageUrl = uploadResult.secure_url;
       }
+      await Item.findByIdAndUpdate(itemId, { currentImage: imageUrl });
       item.currentImage = imageUrl;
-      await item.save();
     }
 
     await History.create({
