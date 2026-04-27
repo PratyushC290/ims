@@ -4,6 +4,113 @@ import nodemailer from "nodemailer";
 import { User } from "../models/User.js";
 import { Otp } from "../models/OTP.js";
 
+export const signupStudent = async (req, res) => {
+  try {
+    const { fullname, instituteEmail, phoneNumber } = req.body;
+
+    if (!fullname || !instituteEmail || !phoneNumber) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    let existingUser = await User.findOne({ instituteEmail });
+
+    if (existingUser) {
+      if (existingUser.role === "Student") {
+        return res.status(400).json({
+          message: "You are already registered. Please login.",
+        });
+      }
+
+      if (existingUser.role === "Admin" || existingUser.role === "Super Admin") {
+        return res.status(400).json({
+          message: "Please use the admin login page.",
+        });
+      }
+    }
+
+    await Otp.deleteMany({ instituteEmail });
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
+    await Otp.create({ email: instituteEmail, otpCode });
+
+    try {
+      await sendOtpEmail(instituteEmail, otpCode);
+    } catch (emailError) {
+      await Otp.deleteMany({ instituteEmail });
+      throw emailError;
+    }
+
+    res.status(200).json({ message: "OTP sent for verification." });
+  } catch (error) {
+    console.error("Student Signup Error:", error);
+    if (error.code === 11000 && error.keyPattern?.phoneNumber) {
+      return res.status(400).json({
+        message: "This phone number is already registered to another account.",
+      });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const verifyStudentSignup = async (req, res) => {
+  try {
+    const { fullname, instituteEmail, phoneNumber, otpCode } = req.body;
+
+    if (!fullname || !instituteEmail || !phoneNumber || !otpCode) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const validOtp = await Otp.findOne({ email: instituteEmail });
+
+    if (!validOtp) {
+      return res.status(400).json({ message: "No OTP found. Please request new OTP." });
+    }
+
+    if (validOtp.attempts >= 5) {
+      await Otp.deleteOne({ _id: validOtp._id });
+      return res.status(403).json({ message: "Too many attempts. Request new OTP." });
+    }
+
+    if (validOtp.otpCode !== otpCode) {
+      validOtp.attempts += 1;
+      await validOtp.save();
+      return res.status(400).json({ message: "Incorrect OTP." });
+    }
+
+    let existingUser = await User.findOne({ instituteEmail });
+
+    if (existingUser) {
+      if (existingUser.role === "Student") {
+        await Otp.deleteOne({ _id: validOtp._id });
+        return res.status(400).json({ message: "Already registered. Please login." });
+      }
+      await Otp.deleteOne({ _id: validOtp._id });
+      return res.status(400).json({ message: "Please use admin login page." });
+    }
+
+    const newUser = new User({
+      fullname,
+      instituteEmail,
+      phoneNumber,
+      role: "Student",
+      accountStatus: "Approved",
+      avatar: "https://default-avatar-url.com/image.png",
+    });
+
+    await newUser.save();
+    await Otp.deleteOne({ _id: validOtp._id });
+
+    res.status(201).json({ message: "Registration successful! Please login." });
+  } catch (error) {
+    console.error("Student Verify Error:", error);
+    if (error.code === 11000 && error.keyPattern?.phoneNumber) {
+      return res.status(400).json({
+        message: "This phone number is already registered.",
+      });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 export const signupAdmin = async (req, res) => {
   try {
     const { fullname, instituteEmail, phoneNumber, avatar } = req.body;

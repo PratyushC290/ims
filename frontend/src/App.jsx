@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import StudentLogin from "./pages/StudentLogin";
+import StudentRegister from "./pages/StudentRegister";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
@@ -22,6 +23,7 @@ const App = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/student-login" element={<StudentLogin />} />
+      <Route path="/student-register" element={<StudentRegister />} />
 
       {/* Protected Routes - All users must be authenticated */}
       <Route element={<ProtectedRoute />}>

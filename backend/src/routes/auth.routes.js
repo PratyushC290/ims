@@ -4,6 +4,8 @@ import {
   requestOtp,
   verifyOtp,
   signupAdmin,
+  signupStudent,
+  verifyStudentSignup,
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -21,6 +23,8 @@ const otpLimiter = rateLimit({
 
 // POST /api/auth/signup
 router.post("/signup", signupAdmin);
+router.post("/signup-student", signupStudent);
+router.post("/verify-student-signup", verifyStudentSignup);
 // POST /api/auth/request-otp
 router.post("/request-otp", requestOtp);
 // POST /api/auth/verify-otp

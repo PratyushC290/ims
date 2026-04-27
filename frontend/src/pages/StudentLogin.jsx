@@ -97,6 +97,17 @@ const StudentLogin = () => {
                 "Get Code"
               )}
             </button>
+
+            <p className="text-center text-sm text-gray-500 mt-6">
+              New student?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/student-register")}
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Register here
+              </button>
+            </p>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
