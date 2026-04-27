@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback } from "react";
-import { Search, Loader2, History as HistoryIcon, RotateCcw, ArrowLeftRight } from "lucide-react";
+import { Search, Loader2, History as HistoryIcon, RotateCcw, ArrowLeftRight, X } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import Pagination from "../components/Pagination";
@@ -98,10 +98,10 @@ const IssuedItems = () => {
         <div>
           <h1 className="text-2xl font-bold text-[var(--theme-text)] tracking-tight flex items-center gap-2">
             <ArrowLeftRight className="h-6 w-6" />
-            Issued Items
+            Return Items
           </h1>
           <p className="text-sm text-[var(--theme-text-muted)] mt-1">
-            View and manage all issued inventory items.
+            View and manage issued items for return.
           </p>
         </div>
       </div>
@@ -196,7 +196,7 @@ const IssuedItems = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleHistory(asset.catalogItem?._id)}
-                          className="p-2 text-[var(--theme-text-muted)] hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                          className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
                           title="View History"
                         >
                           <HistoryIcon className="h-4 w-4" />
@@ -204,7 +204,7 @@ const IssuedItems = () => {
                         {asset.status === "Issued" && (
                           <button
                             onClick={() => handleReturn(asset._id)}
-                            className="p-2 text-[var(--theme-text-muted)] hover:text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                            className="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"
                             title="Return Item"
                           >
                             <RotateCcw className="h-4 w-4" />
@@ -237,7 +237,7 @@ const IssuedItems = () => {
                 onClick={() => setHistoryModalOpen(false)}
                 className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
               >
-                <RotateCcw className="h-5 w-5 text-[var(--theme-text-muted)]" />
+                <X className="h-5 w-5 text-[var(--theme-text-muted)]" />
               </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-[60vh]">

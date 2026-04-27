@@ -7,11 +7,26 @@ const requestSchema = new Schema(
       ref: "User",
       required: true,
     },
-    requestedItem: {
+    location: {
       type: String,
       required: true,
       trim: true,
     },
+    items: [
+      {
+        itemType: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          min: 1,
+          default: 1,
+        },
+      }
+    ],
     reason: {
       type: String,
       required: true,
@@ -21,11 +36,6 @@ const requestSchema = new Schema(
       type: String,
       enum: ["Pending", "Approved", "Rejected", "Fulfilled"],
       default: "Pending",
-    },
-    assignedItem: {
-      type: Schema.Types.ObjectId,
-      ref: "Item",
-      default: null,
     },
   },
   {

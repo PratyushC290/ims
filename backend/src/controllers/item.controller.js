@@ -435,53 +435,169 @@ export const bulkUnassignFolder = async (req, res) => {
 
 export const assignAsset = async (req, res) => {
   try {
-    const { userId, identifier, hardwareType } = req.body;
+    const { userId, items, identifier, hardwareType } = req.body;
 
-    if (!userId || !identifier || !hardwareType) {
-      return res.status(400).json({ message: "User ID, hardware type, and identifier are required." });
+    // Support both legacy format (single item) and new format (array)
+    const isLegacyFormat = !items || !Array.isArray(items);
+    
+    if (isLegacyFormat) {
+      // Legacy single-item format for backward compatibility
+      if (!userId || !identifier || !hardwareType) {
+        return res.status(400).json({ message: "User ID, hardware type, and identifier are required." });
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      const catalogItem = await Item.findOne({ name: hardwareType });
+      if (!catalogItem) {
+        return res.status(404).json({ message: "Hardware type not found. Please select a valid hardware type." });
+      }
+
+      const existing = await IssuedAsset.findOne({ identifier, status: "Issued" });
+      if (existing) {
+        return res.status(400).json({ message: "This identifier is already issued to another user." });
+      }
+
+      if (catalogItem.availableQuantity <= 0) {
+        return res.status(400).json({ message: "No available stock for this item." });
+      }
+
+      catalogItem.availableQuantity -= 1;
+      await catalogItem.save();
+
+      const issuedAsset = await IssuedAsset.create({
+        user: userId,
+        catalogItem: catalogItem._id,
+        identifier,
+        status: "Issued",
+      });
+
+      await History.create({
+        item: catalogItem._id,
+        action: "Assigned",
+        targetUser: user._id,
+        authorizedBy: req.user.userId,
+        notes: `${identifier}`,
+      });
+
+      res.status(201).json({
+        message: "Item assigned successfully.",
+        issuedAsset,
+        catalogItem,
+      });
+      return;
     }
+
+    // New array format - multiple items in one operation
+    if (isLegacyFormat) {
+      // ... (keep the existing legacy format)
+    }
+
+    // New array format - multiple items in one operation
+    if (!userId || !items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "User ID and items array are required." });
+    }
+
+    console.log("assignAsset received:", { userId, items });
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const catalogItem = await Item.findOne({ name: hardwareType });
-    if (!catalogItem) {
-      return res.status(404).json({ message: "Hardware type not found. Please select a valid hardware type." });
+    // Validation Phase - check all items before processing any
+    const validations = [];
+    for (const item of items) {
+      if (!item.hardwareType || !item.quantity || item.quantity < 1) {
+        return res.status(400).json({ message: "Each item must have a hardware type and quantity >= 1." });
+      }
+
+      // Prefer itemId if provided, otherwise fallback to name lookup
+      let catalogItem;
+      console.log("Lookup:", item.hardwareType, "itemId:", item.itemId);
+      if (item.itemId) {
+        catalogItem = await Item.findById(item.itemId);
+      } else {
+        catalogItem = await Item.findOne({ name: item.hardwareType });
+      }
+      
+      if (!catalogItem) {
+        return res.status(404).json({ message: item.itemId 
+          ? `Item not found.` 
+          : `Hardware type '${item.hardwareType}' not found.` 
+        });
+      }
+
+      if (catalogItem.availableQuantity < item.quantity) {
+        return res.status(400).json({ message: `Not enough stock for '${catalogItem.name}'. Available: ${catalogItem.availableQuantity}` });
+      }
+
+      // Identifiers are mandatory
+      const providedIds = item.identifiers || [];
+      
+      if (providedIds.length === 0 || providedIds.length !== item.quantity) {
+        console.log("FAIL:", item.hardwareType, "qty:", item.quantity, "ids len:", providedIds.length);
+        return res.status(400).json({ message: `Must provide exactly ${item.quantity} identifier(s) for ${catalogItem.name}.` });
+      }
+
+      for (const id of providedIds) {
+        if (!id.trim()) {
+          return res.status(400).json({ message: "Identifier cannot be empty." });
+        }
+        const existing = await IssuedAsset.findOne({ identifier: id.trim(), status: "Issued" });
+        if (existing) {
+          return res.status(400).json({ message: `Identifier '${id.trim()}' is already issued.` });
+        }
+      }
+
+      validations.push({ catalogItem, quantity: item.quantity, identifiers: providedIds });
     }
 
-    const existing = await IssuedAsset.findOne({ identifier, status: "Issued" });
-    if (existing) {
-      return res.status(400).json({ message: "This identifier is already issued to another user." });
+    // Execution Phase - process all items
+    const newIssuedAssets = [];
+    const historyLogs = [];
+
+    for (const validation of validations) {
+      const { catalogItem, quantity, identifiers } = validation;
+
+      // Deduct stock
+      catalogItem.availableQuantity -= quantity;
+      await catalogItem.save();
+
+      // Create issued assets
+      for (let i = 0; i < quantity; i++) {
+        const identifier = identifiers[i].trim();
+        
+        const issuedAsset = await IssuedAsset.create({
+          user: userId,
+          catalogItem: catalogItem._id,
+          identifier,
+          status: "Issued",
+        });
+
+        newIssuedAssets.push(issuedAsset);
+
+        historyLogs.push({
+          item: catalogItem._id,
+          action: "Assigned",
+          targetUser: user._id,
+          authorizedBy: req.user.userId,
+          notes: `${identifier}`,
+        });
+      }
     }
 
-    if (catalogItem.availableQuantity <= 0) {
-      return res.status(400).json({ message: "No available stock for this item." });
+    if (historyLogs.length > 0) {
+      await History.insertMany(historyLogs);
     }
-
-    catalogItem.availableQuantity -= 1;
-    await catalogItem.save();
-
-    const issuedAsset = await IssuedAsset.create({
-      user: userId,
-      catalogItem: catalogItem._id,
-      identifier,
-      status: "Issued",
-    });
-
-    await History.create({
-      item: catalogItem._id,
-      action: "Assigned",
-      targetUser: user._id,
-      authorizedBy: req.user.userId,
-      notes: `${identifier}`,
-    });
 
     res.status(201).json({
-      message: "Item assigned successfully.",
-      issuedAsset,
-      catalogItem,
+      message: `${newIssuedAssets.length} item(s) assigned successfully.`,
+      issuedAssets: newIssuedAssets,
+      user,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

@@ -189,7 +189,7 @@ const Requests = () => {
               <thead>
                 <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]">
                   <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Student</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Requested Item</th>
+                  <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Requested Items</th>
                   <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Reason</th>
                   <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Date</th>
                   <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Status</th>
@@ -220,12 +220,21 @@ const Requests = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-[var(--theme-text-muted)]" />
-                        <span className="font-medium text-[var(--theme-text)]">
-                          {request.requestedItem}
-                        </span>
+                      <div className="flex flex-col gap-1.5">
+                        {request.items?.map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-[var(--theme-text-muted)]" />
+                            <span className="font-medium text-[var(--theme-text)]">
+                              {item.itemType} <span className="text-[var(--theme-text-muted)] text-xs ml-1">x{item.quantity}</span>
+                            </span>
+                          </div>
+                        ))}
                       </div>
+                      {request.location && (
+                        <div className="mt-2 text-xs text-blue-500 font-semibold border border-blue-500/20 bg-blue-500/10 px-2 py-1 rounded-md inline-block">
+                          Loc: {request.location}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 max-w-xs">
                       <p className="text-sm text-[var(--theme-text-muted)] line-clamp-2">

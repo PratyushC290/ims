@@ -7,10 +7,10 @@ import { History } from "../models/History.js";
 export const createRequest = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { requestedItem, reason } = req.body;
+    const { items, location, reason } = req.body;
 
-    if (!requestedItem || !reason) {
-      return res.status(400).json({ message: "requestedItem and reason are required." });
+    if (!items || !Array.isArray(items) || items.length === 0 || !location || !reason) {
+      return res.status(400).json({ message: "items array, location, and reason are required." });
     }
 
     const user = await User.findById(userId);
@@ -18,13 +18,14 @@ export const createRequest = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    if (user.role !== "Student") {
-      return res.status(403).json({ message: "Only students can create requests." });
+    if (!["Student", "Faculty"].includes(user.role)) {
+      return res.status(403).json({ message: "Only students and faculty can create requests." });
     }
 
     const newRequest = await Request.create({
       user: userId,
-      requestedItem,
+      items,
+      location,
       reason,
     });
 
@@ -67,7 +68,8 @@ export const getAllRequests = async (req, res) => {
 
     if (search) {
       query.$or = [
-        { requestedItem: { $regex: search, $options: "i" } },
+        { "items.itemType": { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
         { reason: { $regex: search, $options: "i" } },
       ];
     }
@@ -137,63 +139,119 @@ export const updateRequestStatus = async (req, res) => {
 export const fulfillRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { catalogItemId, identifier } = req.body;
+    const { assignments, items: adminItems } = req.body;
 
-    if (!catalogItemId || !identifier) {
-      return res.status(400).json({ message: "catalogItemId and identifier are required." });
-    }
+    console.log("Backend fulfillRequest:", { adminItems, assignments });
 
+    // Support flexible fulfillment: admin-provided items OR fallback to request items
+    const isFlexibleFulfillment = adminItems && Array.isArray(adminItems);
+    
     const request = await Request.findById(requestId);
     if (!request) {
       return res.status(404).json({ message: "Request not found." });
     }
 
-    if (request.status !== "Pending" && request.status !== "Approved") {
+    if (request.status !== "Approved" && request.status !== "Pending") {
       return res.status(400).json({ message: "Can only fulfill pending or approved requests." });
     }
 
-    const catalogItem = await Item.findById(catalogItemId);
-    if (!catalogItem) {
-      return res.status(404).json({ message: "Catalog item not found." });
+    const itemsToFulfill = isFlexibleFulfillment ? adminItems : request.items;
+
+    // Validation Phase
+    const catalogUpdates = [];
+    const newIssuedAssets = [];
+    const historyLogs = [];
+
+    for (const item of itemsToFulfill) {
+      const itemType = item.itemType;
+      const quantity = item.quantity;
+      
+      if (!itemType || !quantity || quantity < 1) {
+        return res.status(400).json({ message: "Each item must have a valid itemType and quantity >= 1." });
+      }
+
+      // Identifiers are now mandatory
+      const identifiers = assignments?.[itemType] || [];
+      
+      // Prefer itemId if provided, otherwise fallback to name lookup
+      let catalogItem;
+      if (item.itemId) {
+        catalogItem = await Item.findById(item.itemId);
+      } else {
+        catalogItem = await Item.findOne({ name: itemType });
+      }
+      
+      if (!catalogItem) {
+        return res.status(404).json({ message: item.itemId 
+          ? `Item not found.` 
+          : `Catalog item '${itemType}' not found in Inventory.` 
+        });
+      }
+
+      if (catalogItem.availableQuantity < quantity) {
+        return res.status(400).json({ message: `Not enough stock available for ${catalogItem.name}. Available: ${catalogItem.availableQuantity}` });
+      }
+
+      console.log("Validation for", itemType, ": quantity=", quantity, "identifiers=", identifiers, "length=", identifiers.length);
+
+      if (identifiers.length === 0 || identifiers.length !== quantity) {
+        return res.status(400).json({ message: `Must provide exactly ${quantity} identifier(s) for ${itemType}.` });
+      }
+
+      // Validate each identifier if provided
+      for (const id of identifiers) {
+        if (!id.trim()) {
+           return res.status(400).json({ message: "Identifier cannot be empty." });
+        }
+        const existing = await IssuedAsset.findOne({ identifier: id.trim(), status: "Issued" });
+        if (existing) {
+          return res.status(400).json({ message: `Identifier '${id.trim()}' is already issued.` });
+        }
+
+        newIssuedAssets.push({
+          user: request.user,
+          catalogItem: catalogItem._id,
+          identifier: id.trim(),
+          status: "Issued",
+          request: request._id,
+        });
+
+        historyLogs.push({
+          item: catalogItem._id,
+          action: "Assigned",
+          targetUser: request.user,
+          authorizedBy: req.user.userId,
+          notes: `${id.trim()} - Fulfilled for ${itemType}`,
+        });
+      }
+
+      catalogUpdates.push({
+        catalogItem,
+        quantityToDeduct: quantity,
+      });
     }
 
-    if (catalogItem.availableQuantity <= 0) {
-      return res.status(400).json({ message: "No available stock." });
+    // Execution Phase
+    for (const update of catalogUpdates) {
+      update.catalogItem.availableQuantity -= update.quantityToDeduct;
+      await update.catalogItem.save();
     }
 
-    const existing = await IssuedAsset.findOne({ identifier });
-    if (existing) {
-      return res.status(400).json({ message: "This identifier is already issued to someone else." });
+    if (newIssuedAssets.length > 0) {
+      await IssuedAsset.insertMany(newIssuedAssets);
     }
-
-    catalogItem.availableQuantity -= 1;
-    await catalogItem.save();
-
-    const issuedAsset = await IssuedAsset.create({
-      user: request.user,
-      catalogItem: catalogItemId,
-      identifier,
-      status: "Issued",
-      request: requestId,
-    });
+    
+    if (historyLogs.length > 0) {
+      await History.insertMany(historyLogs);
+    }
 
     request.status = "Fulfilled";
-    request.assignedItem = catalogItemId;
     await request.save();
-
-    await History.create({
-      item: catalogItemId,
-      action: "Assigned",
-      targetUser: request.user,
-      authorizedBy: req.user.userId,
-      notes: `${identifier} - Fulfilled request for ${request.requestedItem}`,
-    });
 
     res.status(200).json({
       message: "Request fulfilled successfully.",
       request,
-      issuedAsset,
-      catalogItem,
+      fulfilledItems: itemsToFulfill,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

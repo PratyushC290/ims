@@ -1,7 +1,7 @@
 // edited for stock-based catalog
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback } from "react";
-import { PackagePlus, Search, Loader2, X, Folder as FolderIcon, FolderPlus, ChevronRight, Package, AlertTriangle, History as HistoryIcon, Plus, Minus, ArrowLeftRight, RotateCcw, Edit2 } from "lucide-react";
+import { PackagePlus, Search, Loader2, X, Folder as FolderIcon, FolderPlus, ChevronRight, Package, AlertTriangle, History as HistoryIcon, Plus, Minus, ArrowLeftRight, RotateCcw, Edit2, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import Pagination from "../components/Pagination";
@@ -32,7 +32,14 @@ const Inventory = () => {
   const [issuedSearch, setIssuedSearch] = useState("");
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
-  const [assignForm, setAssignForm] = useState({ userId: "", identifier: "", hardwareType: "" });
+  const [assignForm, setAssignForm] = useState({
+    userId: "",
+    userName: "",
+  });
+  const [assignItems, setAssignItems] = useState([
+    { hardwareType: "", quantity: 1, identifiers: [""] }
+  ]);
+  const [assignItemsSelected, setAssignItemsSelected] = useState([{}]);
   const [assignUserSearch, setAssignUserSearch] = useState("");
   const [assignHardwareSearch, setAssignHardwareSearch] = useState("");
 
@@ -179,23 +186,106 @@ const Inventory = () => {
 
   const handleAssignItem = async (e) => {
     e.preventDefault();
-    if (!assignForm.userId || !assignForm.hardwareType || !assignForm.identifier.trim()) {
-      toast.error("Please fill in all fields");
+    
+    if (!assignForm.userId) {
+      toast.error("Please select a user");
       return;
     }
+
+    // Debug what's in the state
+    console.log("assignItems state:", JSON.stringify(assignItems));
+
+    // Simple direct submit - just gather all valid items
+    const itemsToSubmit = [];
+    for (let i = 0; i < assignItems.length; i++) {
+      const item = assignItems[i];
+      const qty = parseInt(item.quantity) || 0;
+      const idLen = item.identifiers?.length || 0;
+      console.log(`Item ${i}: hw=${item.hardwareType}, qty=${qty} (type:${typeof qty}), ids=${idLen}`);
+      
+      if (item.hardwareType && qty > 0) {
+        if (idLen < qty) {
+          toast.error(`${item.hardwareType}: need ${qty} identifier(s), got ${idLen}`);
+          return;
+        }
+        
+        itemsToSubmit.push({
+          hardwareType: item.hardwareType,
+          quantity: qty,
+          identifiers: item.identifiers.slice(0, qty),
+          itemId: assignItemsSelected[i]?._id || null
+        });
+      }
+    }
+
+    if (itemsToSubmit.length === 0) {
+      toast.error("Please add at least one item");
+      return;
+    }
+
+    console.log("FINAL SUBMIT:", itemsToSubmit);
+
     try {
       await api.post("/items/assign", {
         userId: assignForm.userId,
-        identifier: assignForm.identifier.trim(),
-        hardwareType: assignForm.hardwareType,
+        items: itemsToSubmit
       });
-      toast.success("Item assigned successfully");
+      toast.success("Items assigned successfully");
       setIsAssignModalOpen(false);
-      setAssignForm({ userId: "", identifier: "" });
+      setAssignForm({ userId: "", userName: "" });
+      setAssignItems([{ hardwareType: "", quantity: 1, identifiers: [""] }]);
+      setAssignItemsSelected([{}]);
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to assign item");
     }
+  };
+
+  const addAssignItem = () => {
+    setAssignItems([...assignItems, { hardwareType: "", quantity: 1, identifiers: [""] }]);
+    setAssignItemsSelected([...assignItemsSelected, {}]);
+  };
+
+  const removeAssignItem = (index) => {
+    if (assignItems.length > 1) {
+      setAssignItems(assignItems.filter((_, i) => i !== index));
+      setAssignItemsSelected(assignItemsSelected.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateAssignItem = (index, field, value) => {
+    const newItems = [...assignItems];
+    newItems[index][field] = value;
+    if (field === "quantity") {
+      const qty = Math.max(1, parseInt(value) || 1);
+      newItems[index].identifiers = Array(qty).fill("").map((_, i) => newItems[index].identifiers[i] || "");
+    }
+    setAssignItems(newItems);
+    // Clear selection state when user types
+    if (field === "hardwareType") {
+      const newSelected = [...assignItemsSelected];
+      newSelected[index] = {};
+      setAssignItemsSelected(newSelected);
+    }
+  };
+
+  const handleSelectAssignItem = (index, item) => {
+    const newItems = [...assignItems];
+    const currentQty = newItems[index].quantity || 1;
+    const existingIds = newItems[index].identifiers || [];
+    newItems[index].hardwareType = item.name;
+    newItems[index].quantity = currentQty;
+    newItems[index].identifiers = Array(currentQty).fill("").map((_, i) => existingIds[i] || "");
+    const newSelected = [...assignItemsSelected];
+    newSelected[index] = item;
+    setAssignItems(newItems);
+    setAssignItemsSelected(newSelected);
+  };
+
+  const updateAssignIdentifier = (itemIndex, idIndex, value) => {
+    const newItems = [...assignItems];
+    newItems[itemIndex].identifiers[idIndex] = value;
+    setAssignItems(newItems);
   };
 
   if (loading && items.length === 0) {
@@ -460,11 +550,11 @@ const Inventory = () => {
 
       {isAssignModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-md w-full p-6 relative border border-[var(--theme-border)]">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-lg w-full p-6 relative border border-[var(--theme-border)] max-h-[85vh] overflow-y-auto">
             <button onClick={() => setIsAssignModalOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
               <X className="h-4 w-4" />
             </button>
-            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-4">Assign Item to User</h2>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-4">Assign Items to User</h2>
             <form onSubmit={handleAssignItem} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">Select User</label>
@@ -478,7 +568,7 @@ const Inventory = () => {
                     className="w-full pl-10 pr-4 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl"
                   />
                 </div>
-                <div className="mt-2 max-h-40 overflow-y-auto border border-[var(--theme-border)] rounded-xl">
+                <div className="mt-2 max-h-32 overflow-y-auto border border-[var(--theme-border)] rounded-xl">
                   {users.filter(u => 
                     !assignUserSearch || 
                     u.fullname.toLowerCase().includes(assignUserSearch.toLowerCase()) ||
@@ -494,7 +584,7 @@ const Inventory = () => {
                       <div
                         key={user._id}
                         onClick={() => {
-                          setAssignForm({ ...assignForm, userId: user._id });
+                          setAssignForm({ ...assignForm, userId: user._id, userName: user.fullname });
                           setAssignUserSearch(user.fullname);
                         }}
                         className={`p-3 cursor-pointer hover:bg-[var(--theme-bg)] border-b border-[var(--theme-border)] last:border-0 ${
@@ -508,56 +598,112 @@ const Inventory = () => {
                   )}
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">Hardware Type</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--theme-text-muted)]" />
-                  <input
-                    type="text"
-                    placeholder="Search hardware type..."
-                    value={assignHardwareSearch}
-                    onChange={(e) => setAssignHardwareSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl"
-                  />
-                </div>
-                <div className="mt-2 max-h-40 overflow-y-auto border border-[var(--theme-border)] rounded-xl">
-                  {catalogItems.filter(i => 
-                    !assignHardwareSearch || 
-                    i.name.toLowerCase().includes(assignHardwareSearch.toLowerCase())
-                  ).length === 0 ? (
-                    <div className="p-3 text-sm text-[var(--theme-text-muted)]">No hardware types found</div>
-                  ) : (
-                    catalogItems.filter(i => 
-                      !assignHardwareSearch || 
-                      i.name.toLowerCase().includes(assignHardwareSearch.toLowerCase())
-                    ).slice(0, 5).map((item) => (
-                      <div
-                        key={item._id}
-                        onClick={() => {
-                          setAssignForm({ ...assignForm, hardwareType: item.name });
-                          setAssignHardwareSearch(item.name);
-                        }}
-                        className={`p-3 cursor-pointer hover:bg-[var(--theme-bg)] border-b border-[var(--theme-border)] last:border-0 ${
-                          assignForm.hardwareType === item.name ? "bg-blue-500/10" : ""
-                        }`}
-                      >
-                        <div className="font-medium text-[var(--theme-text)]">{item.name}</div>
-                        <div className="text-xs text-[var(--theme-text-muted)]">{item.availableQuantity} available</div>
+
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)]">Hardware Items</label>
+                {assignItems.map((item, index) => (
+                  <div key={index} className="bg-[var(--theme-bg)] rounded-xl p-3 border border-[var(--theme-border)]">
+                    <div className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-2">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--theme-text-muted)]" />
+                          <input
+                            type="text"
+                            placeholder="Search hardware type..."
+                            value={item.hardwareType}
+                            onChange={(e) => updateAssignItem(index, "hardwareType", e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm"
+                          />
+                        </div>
+                        {!assignItemsSelected[index]?._id && (
+                          <div className="max-h-32 overflow-y-auto border border-[var(--theme-border)] rounded-lg">
+                            {catalogItems.filter(i => 
+                              !item.hardwareType || 
+                              i.name.toLowerCase().includes(item.hardwareType.toLowerCase())
+                            ).map((catItem) => (
+                              <div
+                                key={catItem._id}
+                                onClick={() => handleSelectAssignItem(index, catItem)}
+                                className={`p-2 cursor-pointer hover:bg-[var(--theme-panel)] border-b border-[var(--theme-border)] last:border-0 flex justify-between ${
+                                  item.hardwareType === catItem.name ? "bg-blue-500/10" : ""
+                                }`}
+                              >
+                                <span className="font-medium text-[var(--theme-text)] text-sm">{catItem.name}</span>
+                                <span className={`text-xs ${catItem.availableQuantity > 0 ? "text-green-500" : "text-red-500"}`}>
+                                  {catItem.availableQuantity} avail
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {assignItemsSelected[index]?._id && (
+                          <div className="flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="text-sm text-green-400">{assignItemsSelected[index].name}</span>
+                            <span className="text-xs text-[var(--theme-text-muted)]">({assignItemsSelected[index].availableQuantity} avail)</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newSelected = [...assignItemsSelected];
+                                newSelected[index] = {};
+                                setAssignItemsSelected(newSelected);
+                              }}
+                              className="ml-auto p-1 text-green-500 hover:bg-green-500/20 rounded"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
+                      <div className="w-20">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => updateAssignItem(index, "quantity", e.target.value)}
+                          className="w-full px-2 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm text-center"
+                          placeholder="Qty"
+                        />
+                      </div>
+                      {assignItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeAssignItem(index)}
+                          className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="mt-2 pt-2 border-t border-[var(--theme-border)]">
+                      <label className="block text-xs font-medium text-[var(--theme-text-muted)] mb-1">
+                        Serial Numbers (required)
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {item.identifiers.map((id, idIndex) => (
+                        <input
+                          key={idIndex}
+                          type="text"
+                          placeholder={`Serial #${idIndex + 1}`}
+                          value={id}
+                          onChange={(e) => updateAssignIdentifier(index, idIndex, e.target.value)}
+                          className="w-full px-3 py-1.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-lg text-sm"
+                        />
+                      ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addAssignItem}
+                  className="text-sm font-semibold text-blue-500 hover:text-blue-600 px-2 py-1"
+                >
+                  + Add another item
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">Item Identifier (Serial Number)</label>
-                <input
-                  type="text"
-                  value={assignForm.identifier}
-                  onChange={(e) => setAssignForm({ ...assignForm, identifier: e.target.value })}
-                  placeholder="e.g. LAP001, TAB-2024-001"
-                  className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl"
-                />
-              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -570,7 +716,7 @@ const Inventory = () => {
                   type="submit"
                   className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold"
                 >
-                  Assign
+                  Assign All
                 </button>
               </div>
             </form>

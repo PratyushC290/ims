@@ -24,13 +24,13 @@ const UserDetail = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [userResponse, itemsResponse, historyResponse] = await Promise.all([
+      const [userResponse, issuedResponse, historyResponse] = await Promise.all([
         api.get(`/users/${userId}`),
-        api.get("/items"),
+        api.get(`/items/user/${userId}/issued`),
         api.get(`/users/${userId}/history`)
       ]);
       setUser(userResponse.data);
-      setItems(itemsResponse.data.items);
+      setItems(issuedResponse.data.issuedAssets);
       setHistory(historyResponse.data.history);
     } catch (error) {
       toast.error("Failed to load user details");
@@ -44,9 +44,7 @@ const UserDetail = () => {
     fetchData();
   }, [fetchData]);
 
-  const issuedItems = items.filter(
-    (item) => item.assignedTo?._id === userId
-  );
+  const issuedItems = items || [];
 
   if (loading) {
     return (
@@ -140,6 +138,9 @@ const UserDetail = () => {
                       </div>
                       <div>
                         <div className="font-medium text-[var(--theme-text)]">
+                          {item.catalogItem?.name || "Asset"}
+                        </div>
+                        <div className="text-xs text-[var(--theme-text-muted)] font-mono">
                           {item.identifier}
                         </div>
                       </div>

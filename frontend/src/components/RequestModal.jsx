@@ -5,9 +5,9 @@ import api from "../api";
 
 const RequestModal = ({ isOpen, onClose, onSuccess }) => {
   const [hardwareTypes, setHardwareTypes] = useState([]);
-  const [requestedItem, setRequestedItem] = useState("");
+  const [items, setItems] = useState([{ itemType: "", quantity: 1, customItem: "" }]);
+  const [location, setLocation] = useState("");
   const [reason, setReason] = useState("");
-  const [customItem, setCustomItem] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
@@ -37,25 +37,30 @@ const RequestModal = ({ isOpen, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const itemValue = requestedItem === "Other" ? customItem : requestedItem;
+    // Format items: resolve "Other" to the custom item string
+    const formattedItems = items.map(item => ({
+      itemType: item.itemType === "Other" ? item.customItem : item.itemType,
+      quantity: item.quantity
+    }));
     
-    if (!itemValue || !reason.trim()) {
-      toast.error("Please fill in all fields");
+    if (formattedItems.some(i => !i.itemType) || !location.trim() || !reason.trim()) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
     try {
       setLoading(true);
       const res = await api.post("/requests", {
-        requestedItem: itemValue,
+        items: formattedItems,
+        location: location.trim(),
         reason: reason.trim(),
       });
 
       onSuccess(res.data.request);
       
-      setRequestedItem("");
+      setItems([{ itemType: "", quantity: 1, customItem: "" }]);
+      setLocation("");
       setReason("");
-      setCustomItem("");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to submit request");
     } finally {
@@ -92,37 +97,91 @@ const RequestModal = ({ isOpen, onClose, onSuccess }) => {
             <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-[var(--theme-text)]">
+                Hardware Items Needed
+              </label>
+              {items.map((item, index) => (
+                <div key={index} className="flex gap-2 items-start bg-[var(--theme-bg)] p-3 rounded-xl border border-[var(--theme-border)]">
+                  <div className="flex-1 space-y-2">
+                    <select
+                      value={item.itemType}
+                      onChange={(e) => {
+                        const newItems = [...items];
+                        newItems[index].itemType = e.target.value;
+                        if (e.target.value !== "Other") newItems[index].customItem = "";
+                        setItems(newItems);
+                      }}
+                      className="w-full px-3 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    >
+                      <option value="">Select hardware type...</option>
+                      {hardwareTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                      <option value="Other">Other (specify below)</option>
+                    </select>
+                    {item.itemType === "Other" && (
+                      <input
+                        type="text"
+                        placeholder="Specify hardware..."
+                        value={item.customItem || ""}
+                        onChange={(e) => {
+                          const newItems = [...items];
+                          newItems[index].customItem = e.target.value;
+                          setItems(newItems);
+                        }}
+                        className="w-full px-3 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                    )}
+                  </div>
+                  <div className="w-24">
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const newItems = [...items];
+                        newItems[index].quantity = parseInt(e.target.value) || 1;
+                        setItems(newItems);
+                      }}
+                      className="w-full px-3 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      placeholder="Qty"
+                    />
+                  </div>
+                  {items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setItems(items.filter((_, i) => i !== index))}
+                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors mt-0.5"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setItems([...items, { itemType: "", quantity: 1 }])}
+                className="text-sm font-semibold text-blue-500 hover:text-blue-600 px-2 py-1"
+              >
+                + Add another item
+              </button>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-[var(--theme-text)] mb-2">
-                Hardware Type Needed
+                Location
               </label>
-              <select
-                value={requestedItem}
-                onChange={(e) => {
-                  setRequestedItem(e.target.value);
-                  if (e.target.value !== "Other") setCustomItem("");
-                }}
-                className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              >
-                <option value="">Select hardware type...</option>
-                {hardwareTypes.map(type => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-                <option value="Other">Other (specify below)</option>
-              </select>
-              
-              {requestedItem === "Other" && (
-                <input
-                  type="text"
-                  placeholder="Specify hardware..."
-                  value={customItem}
-                  onChange={(e) => setCustomItem(e.target.value)}
-                  className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all mt-3"
-                />
-              )}
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Where will this hardware be kept/used?"
+                className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              />
             </div>
 
             <div>
@@ -133,12 +192,12 @@ const RequestModal = ({ isOpen, onClose, onSuccess }) => {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Explain why you need this hardware..."
-                rows={4}
-                className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                rows={3}
+                className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
               />
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-4 border-t border-[var(--theme-border)]">
               <button
                 type="button"
                 onClick={onClose}
@@ -148,7 +207,7 @@ const RequestModal = ({ isOpen, onClose, onSuccess }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading || !requestedItem || !reason.trim()}
+                disabled={loading || !items.every(i => (i.itemType === "Other" ? i.customItem : i.itemType)) || !location.trim() || !reason.trim()}
                 className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (

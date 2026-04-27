@@ -193,10 +193,19 @@ const StudentPortal = () => {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-semibold text-[var(--theme-text)]">
-                          {request.requestedItem}
-                        </h3>
-                        <p className="text-sm text-[var(--theme-text-muted)] mt-0.5 line-clamp-2">
+                        <div className="flex flex-col gap-1">
+                          {request.items?.map((item, idx) => (
+                            <h3 key={idx} className="font-semibold text-[var(--theme-text)]">
+                              {item.itemType} <span className="text-[var(--theme-text-muted)] text-xs ml-1">x{item.quantity}</span>
+                            </h3>
+                          ))}
+                        </div>
+                        {request.location && (
+                          <div className="mt-1.5 text-xs text-blue-500 font-semibold border border-blue-500/20 bg-blue-500/10 px-2 py-1 rounded-md inline-block">
+                            Loc: {request.location}
+                          </div>
+                        )}
+                        <p className="text-sm text-[var(--theme-text-muted)] mt-1.5 line-clamp-2">
                           {request.reason}
                         </p>
                       </div>

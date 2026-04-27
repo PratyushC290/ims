@@ -42,28 +42,28 @@ const Layout = () => {
   }, [isDarkMode]);
 
   const isStudent = userProfile.role === "Student";
-  
+
   const navItems = isStudent
     ? []
     : [
-        { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
-        {
-          name: "Inventory",
-          path: "/dashboard/inventory",
-          icon: MonitorSmartphone,
-        },
-        {
-          name: "Issued Items",
-          path: "/dashboard/issued-items",
-          icon: Package,
-        },
-        { name: "User Assets", path: "/dashboard/user-assets", icon: Package },
-        { name: "Hardware Requests", path: "/dashboard/requests", icon: ShoppingCart },
-        { name: "Directory", path: "/dashboard/users", icon: Users },
-        { name: "No Dues", path: "/dashboard/no-dues", icon: FileText },
-        { name: "No Dues Verifications", path: "/dashboard/no-dues-verifications", icon: FileText },
-        { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
-      ];
+      { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
+      {
+        name: "Inventory",
+        path: "/dashboard/inventory",
+        icon: MonitorSmartphone,
+      },
+      {
+        name: "Return Items",
+        path: "/dashboard/issued-items",
+        icon: Package,
+      },
+      { name: "User Assets", path: "/dashboard/user-assets", icon: Package },
+      { name: "Hardware Requests", path: "/dashboard/requests", icon: ShoppingCart },
+      { name: "Directory", path: "/dashboard/users", icon: Users },
+      { name: "No Dues", path: "/dashboard/no-dues", icon: FileText },
+      { name: "No Dues Verifications", path: "/dashboard/no-dues-verifications", icon: FileText },
+      { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
+    ];
 
   const handleLogout = () => {
     setConfirmModal({ isOpen: true });
@@ -144,11 +144,11 @@ const Layout = () => {
     const loadNotifications = async () => {
       await fetchNotifications();
     };
-    
+
     if (userProfile.role === "Student" && location.pathname === "/dashboard") {
       navigate("/dashboard/my-portal");
     }
-    
+
     loadNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
@@ -181,7 +181,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] flex transition-colors duration-300">
-      
+
       {/* SIDEBAR - Hidden for students */}
       {!isStudent && (
         <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-[var(--theme-panel)] border-r border-[var(--theme-border)] shadow-sm transition-colors duration-300">
@@ -203,11 +203,10 @@ const Layout = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
-                    isActive
-                      ? "bg-[var(--theme-bg)] shadow-sm border border-[var(--theme-border)] text-[var(--theme-accent)]"
-                      : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${isActive
+                    ? "bg-[var(--theme-bg)] shadow-sm border border-[var(--theme-border)] text-[var(--theme-accent)]"
+                    : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
+                    }`}
                 >
                   <Icon
                     className={`h-5 w-5 ${isActive ? "text-[var(--theme-accent)]" : "text-[var(--theme-text-muted)]"}`}
@@ -223,97 +222,96 @@ const Layout = () => {
 
       {/* MAIN CONTENT WRAPPER */}
       <main className={`flex-1 flex flex-col min-h-screen ${isStudent ? 'ml-0' : 'ml-64'}`}>
-        
+
         {/* TOP HEADER */}
         <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-[var(--theme-panel)] border-b border-[var(--theme-border)] transition-colors duration-300">
           <div className="flex items-center gap-4">
             {(showNotifications || showProfileMenu) && (
-              <div 
-                className="fixed inset-0 z-40" 
+              <div
+                className="fixed inset-0 z-40"
                 onClick={() => { setShowNotifications(false); setShowProfileMenu(false); }}
               />
             )}
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)} 
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
               className="p-2.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] bg-[var(--theme-bg)] rounded-full border border-[var(--theme-border)] shadow-sm transition-all"
             >
               {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             {!isStudent && (
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  if (!showNotifications) fetchNotifications();
-                }}
-                className="p-2.5 bg-[var(--theme-bg)] rounded-full shadow-sm border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] transition-colors relative"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[var(--theme-bg)]"></span>
-                )}
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    if (!showNotifications) fetchNotifications();
+                  }}
+                  className="p-2.5 bg-[var(--theme-bg)] rounded-full shadow-sm border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] transition-colors relative"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[var(--theme-bg)]"></span>
+                  )}
+                </button>
 
-              {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="p-4 border-b border-[var(--theme-border)] flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-[var(--theme-text)]">
-                      Notifications
-                    </h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-xs text-[var(--theme-accent)] hover:opacity-80 font-medium flex items-center gap-1"
-                      >
-                        <CheckCheck className="h-3 w-3" />
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="p-4 text-sm text-[var(--theme-text-muted)] text-center">
-                        Loading...
-                      </div>
-                    ) : notifications.length === 0 ? (
-                      <div className="p-4 text-sm text-[var(--theme-text-muted)] text-center">
-                        No notifications
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-[var(--theme-border)]">
-                        {notifications.map((notification) => (
-                          <div
-                            key={notification._id}
-                            className={`p-4 hover:bg-[var(--theme-bg)] transition-colors ${
-                              !notification.isRead ? "bg-[var(--theme-accent)]/10" : ""
-                            }`}
-                          >
-                            <div className="flex gap-3">
-                              <div
-                                className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${getNotificationColor(notification.type)}`}
-                              ></div>
-                              <div>
-                                <p className="text-sm font-medium text-[var(--theme-text)]">
-                                  {notification.title}
-                                </p>
-                                <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-[var(--theme-text-muted)] opacity-70 mt-1">
-                                  {new Date(
-                                    notification.createdAt,
-                                  ).toLocaleDateString()}
-                                </p>
+                {showNotifications && (
+                  <div className="absolute right-0 mt-3 w-80 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="p-4 border-b border-[var(--theme-border)] flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-[var(--theme-text)]">
+                        Notifications
+                      </h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-xs text-[var(--theme-accent)] hover:opacity-80 font-medium flex items-center gap-1"
+                        >
+                          <CheckCheck className="h-3 w-3" />
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-sm text-[var(--theme-text-muted)] text-center">
+                          Loading...
+                        </div>
+                      ) : notifications.length === 0 ? (
+                        <div className="p-4 text-sm text-[var(--theme-text-muted)] text-center">
+                          No notifications
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-[var(--theme-border)]">
+                          {notifications.map((notification) => (
+                            <div
+                              key={notification._id}
+                              className={`p-4 hover:bg-[var(--theme-bg)] transition-colors ${!notification.isRead ? "bg-[var(--theme-accent)]/10" : ""
+                                }`}
+                            >
+                              <div className="flex gap-3">
+                                <div
+                                  className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${getNotificationColor(notification.type)}`}
+                                ></div>
+                                <div>
+                                  <p className="text-sm font-medium text-[var(--theme-text)]">
+                                    {notification.title}
+                                  </p>
+                                  <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-[var(--theme-text-muted)] opacity-70 mt-1">
+                                    {new Date(
+                                      notification.createdAt,
+                                    ).toLocaleDateString()}
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
             )}
             <div className="relative">
               <button
@@ -322,7 +320,7 @@ const Layout = () => {
               >
                 {userProfile.initial}
               </button>
-              
+
               {showProfileMenu && (
                 <div className="absolute right-0 mt-3 w-56 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="p-4 border-b border-[var(--theme-border)]">
@@ -360,14 +358,14 @@ const Layout = () => {
             <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">Log Out</h2>
             <p className="text-sm text-[var(--theme-text-muted)] mb-6">Are you sure you want to log out of your session?</p>
             <div className="flex gap-3">
-              <button 
-                onClick={() => setConfirmModal({ isOpen: false })} 
+              <button
+                onClick={() => setConfirmModal({ isOpen: false })}
                 className="flex-1 py-2.5 bg-[var(--theme-bg)] text-[var(--theme-text)] rounded-xl font-bold border border-[var(--theme-border)] hover:bg-[var(--theme-border)] transition-colors"
               >
                 Cancel
               </button>
-              <button 
-                onClick={confirmLogout} 
+              <button
+                onClick={confirmLogout}
                 className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold shadow-sm hover:bg-red-700 transition-colors"
               >
                 Log Out
