@@ -195,22 +195,22 @@ const Users = () => {
       </div>
 
       {/* The Frosted Glass Table Wrapper */}
-      <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-        <div className="p-4 border-b border-gray-100/50 flex flex-col sm:flex-row gap-4">
+      <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-4xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-[var(--theme-border)] flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" />
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
           <select 
             value={roleFilter} 
             onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-            className="sm:w-48 p-2 bg-white/50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className="sm:w-48 p-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-sm text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
           >
             <option value="All">All Roles</option>
             <option value="Student">Student</option>
@@ -223,32 +223,32 @@ const Users = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/40 border-b border-gray-100">
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+              <tr className="bg-[var(--theme-bg)] border-b border-[var(--theme-border)]">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Name
                 </th>
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Contact
                 </th>
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   System Role
                 </th>
-                <th className="py-4 px-6 text-sm font-semibold text-gray-500">
+                <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Account Status
                 </th>
 
                 {/* CONDITIONAL COLUMN: Only Super Admins see this header */}
                 {currentUserRole === "Super Admin" && (
-                  <th className="py-4 px-6 text-sm font-semibold text-gray-500 text-right">
+                  <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)] text-right">
                     Admin Actions
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100/50">
+            <tbody className="divide-y divide-[var(--theme-border)]">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-500">
+                  <td colSpan={5} className="py-12 text-center text-[var(--theme-text-muted)]">
                     No users found matching your search.
                   </td>
                 </tr>
@@ -256,24 +256,24 @@ const Users = () => {
                 filteredUsers.map((user) => (
                 <tr
                   key={user._id}
-                  className="hover:bg-white/40 transition-colors"
+                  className="hover:bg-[var(--theme-bg)] transition-colors"
                 >
                   <td className="py-4 px-6">
                     <Link
                       to={`/dashboard/users/${user._id}`}
                       className="flex items-center gap-3 group"
                     >
-                      <div className="h-10 w-10 rounded-full bg-linear-to-tr from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm border border-white shadow-sm group-hover:scale-105 transition-transform">
+                      <div className="h-10 w-10 rounded-full bg-[var(--theme-bg)] flex items-center justify-center text-[var(--theme-text)] font-bold text-sm border border-[var(--theme-border)] shadow-sm group-hover:scale-105 transition-transform">
                         {user.fullname.charAt(0)}
                       </div>
-                      <span className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <span className="font-medium text-[var(--theme-text)] group-hover:text-blue-500 transition-colors">
                         {user.fullname}
                       </span>
                     </Link>
                   </td>
                   <td className="py-4 px-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center gap-2 text-sm text-[var(--theme-text-muted)]">
+                      <Mail className="h-4 w-4 text-[var(--theme-text-muted)] opacity-70" />
                       {user.instituteEmail}
                     </div>
                   </td>
@@ -302,51 +302,40 @@ const Users = () => {
 
                   {/* CONDITIONAL ACTIONS: Only Super Admins can click these */}
                   {currentUserRole === "Super Admin" && (
-                    <td className="py-4 px-6 text-right space-x-2">
-                      {/* SCENARIO 1: The user is waiting for approval */}
-                      {user.accountStatus === "Pending" ? (
-                        <>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center justify-end gap-2">
+                        {user.accountStatus === "Pending" ? (
+                          <>
+                            <button
+                              onClick={() => handleReviewUser(user._id, "Approved")}
+                              className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-100"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleReviewUser(user._id, "Rejected")}
+                              className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        ) : user.accountStatus === "Approved" && user.role === "Admin" ? (
                           <button
-                            onClick={() =>
-                              handleReviewUser(user._id, "Approved")
-                            }
-                            className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-100"
+                            onClick={() => handleDemoteRole(user._id, user.fullname)}
+                            className="text-sm text-orange-600 hover:text-orange-800 font-medium transition-colors bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-100"
                           >
-                            Approve
+                            Revoke Admin
                           </button>
-                          <button
-                            onClick={() =>
-                              handleReviewUser(user._id, "Rejected")
-                            }
-                            className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      ) : /* SCENARIO 2: They are approved AND they are an Admin (can be demoted) */
-                      user.accountStatus === "Approved" &&
-                        user.role === "Admin" ? (
+                        ) : (
+                          <span className="text-gray-300 text-sm italic hidden">No actions</span>
+                        )}
                         <button
-                          onClick={() =>
-                            handleDemoteRole(user._id, user.fullname)
-                          }
-                          className="text-sm text-orange-600 hover:text-orange-800 font-medium transition-colors bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-100"
-                        >
-                          Revoke Admin
-                        </button>
-                      ) : (
-                        /* SCENARIO 3: Everyone else (Standard users, other Super Admins, or Rejected) */
-                        <span className="text-gray-300 text-sm italic">
-                          No actions
-                        </span>
-                      )}
-                      {/* Delete User Button for all users except oneself */}
-                      <button
                           onClick={() => handleDeleteUser(user._id, user.fullname)}
-                          className="ml-2 text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
-                      >
-                        Delete
-                      </button>
+                          className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-100"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -359,28 +348,28 @@ const Users = () => {
       </div>
 
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 backdrop-blur-sm">
-          <div className="bg-white rounded-4xl shadow-2xl max-w-md w-full p-8 border border-white relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-[var(--theme-panel)] rounded-4xl shadow-2xl max-w-md w-full p-8 border border-[var(--theme-border)] relative animate-in fade-in zoom-in duration-200">
             <button
               onClick={() => setIsAddModalOpen(false)}
-              className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors"
+              className="absolute top-6 right-6 p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] bg-[var(--theme-bg)] rounded-full transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
 
             <div className="mb-6">
-              <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 border border-blue-100">
+              <div className="h-12 w-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mb-4 border border-blue-500/20">
                 <UserPlus className="h-6 w-6" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900">Add New User</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="text-xl font-bold text-[var(--theme-text)]">Add New User</h2>
+              <p className="text-sm text-[var(--theme-text-muted)] mt-1">
                 Manually add a new user to the system.
               </p>
             </div>
 
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
                   Full Name
                 </label>
                 <input
@@ -389,11 +378,11 @@ const Users = () => {
                   placeholder="John Doe"
                   value={newUser.fullname}
                   onChange={(e) => setNewUser({ ...newUser, fullname: e.target.value })}
-                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
                   Institute Email
                 </label>
                 <input
@@ -402,11 +391,11 @@ const Users = () => {
                   placeholder="john.doe@institute.edu"
                   value={newUser.instituteEmail}
                   onChange={(e) => setNewUser({ ...newUser, instituteEmail: e.target.value })}
-                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
                   Phone Number
                 </label>
                 <input
@@ -415,17 +404,17 @@ const Users = () => {
                   placeholder="+1 234 567 8900"
                   value={newUser.phoneNumber}
                   onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
-                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
                   Role
                 </label>
                 <select
                   value={newUser.role}
                   onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                  className="block w-full py-3 px-4 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 >
                   <option value="Student">Student</option>
                   <option value="Staff">Staff</option>
@@ -438,7 +427,7 @@ const Users = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-[var(--theme-text)] bg-[var(--theme-bg)] border border-[var(--theme-border)] hover:bg-[var(--theme-border)]"
                 >
                   Cancel
                 </button>

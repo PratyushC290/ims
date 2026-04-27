@@ -1,15 +1,6 @@
 // edited by abhiram parupudi 2401cs21
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  MonitorSmartphone,
-  Users,
-  LogOut,
-  Bell,
-  CheckCheck,
-  History,
-  AlertTriangle
-} from "lucide-react";
+import { Sun, Moon, LayoutDashboard, MonitorSmartphone, Users, LogOut, Bell, CheckCheck, History, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import api from "../api";
@@ -21,8 +12,34 @@ const Layout = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const [userProfile, setUserProfile] = useState({ name: "User", initial: "U", email: "" });
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("app_theme") === "dark");
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setShowNotifications(false);
+    setShowProfileMenu(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.style.setProperty("--theme-bg", "#0F172A");
+      document.documentElement.style.setProperty("--theme-panel", "#1E293B");
+      document.documentElement.style.setProperty("--theme-text", "#F8FAFC");
+      document.documentElement.style.setProperty("--theme-accent", "#3B82F6");
+      document.documentElement.style.setProperty("--theme-border", "#334155");
+      document.documentElement.style.setProperty("--theme-text-muted", "#94A3B8");
+      localStorage.setItem("app_theme", "dark");
+    } else {
+      document.documentElement.style.setProperty("--theme-bg", "#F4F7FB");
+      document.documentElement.style.setProperty("--theme-panel", "#FFFFFF");
+      document.documentElement.style.setProperty("--theme-text", "#111827");
+      document.documentElement.style.setProperty("--theme-accent", "#3B82F6");
+      document.documentElement.style.setProperty("--theme-border", "#E5E7EB");
+      document.documentElement.style.setProperty("--theme-text-muted", "#6B7280");
+      localStorage.setItem("app_theme", "light");
+    }
+  }, [isDarkMode]);
 
   const navItems = [
     { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
@@ -102,8 +119,8 @@ const Layout = () => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUserProfile({
           name: payload.name || payload.fullname || "Admin",
-          initial: (payload.name || payload.fullname || "U").charAt(0).toUpperCase(),
-          email: payload.email || ""
+          initial: (payload.email || payload.instituteEmail || "U").charAt(0).toUpperCase(),
+          email: payload.email || payload.instituteEmail || ""
         });
       }
     } catch (e) {
@@ -190,6 +207,12 @@ const Layout = () => {
         {/* TOP HEADER */}
         <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-[var(--theme-panel)] border-b border-[var(--theme-border)] transition-colors duration-300">
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)} 
+              className="p-2.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] bg-[var(--theme-bg)] rounded-full border border-[var(--theme-border)] shadow-sm transition-all"
+            >
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
             <div className="relative">
               <button
                 onClick={() => {

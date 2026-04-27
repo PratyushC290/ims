@@ -11,13 +11,25 @@ import { cloudinary } from "../config/cloudinary.js";
 
 export const createItem = async (req, res) => {
   try {
-    const { identifier, name, folder } = req.body;
+    const { identifier, name, folder, image } = req.body;
+    
+    let imageUrl = null;
+    if (image) {
+      if (image.startsWith("http")) {
+        imageUrl = image;
+      } else {
+        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
+        imageUrl = uploadResult.secure_url;
+      }
+    }
+
     const newItem = await Item.create({
       identifier,
       name: name || "Unnamed Asset",
       status: "Available",
       assignedTo: null,
       folder: folder || null,
+      currentImage: imageUrl,
     });
 
     res.status(201).json({
@@ -42,13 +54,15 @@ export const getAllItems = async (req, res) => {
 
     let query = {};
     if (status) query.status = status;
-    if (folder !== undefined) query.folder = folder === "null" ? null : folder;
     if (search) {
       query.$or = [
         { identifier: { $regex: search, $options: "i" } },
         { name: { $regex: search, $options: "i" } }
       ];
+    } else {
+      if (folder !== undefined) query.folder = folder === "null" ? null : folder;
     }
+
     if (userEmail) {
       const users = await User.find({ instituteEmail: { $regex: userEmail, $options: "i" } });
       if (users.length > 0) {
@@ -99,8 +113,12 @@ export const assignItem = async (req, res) => {
 
     let imageUrl = null;
     if (image) {
-      const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
-      imageUrl = uploadResult.secure_url;
+      if (image.startsWith("http")) {
+        imageUrl = image;
+      } else {
+        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
+        imageUrl = uploadResult.secure_url;
+      }
       item.currentImage = imageUrl;
       await item.save();
     }
@@ -135,8 +153,12 @@ export const returnItem = async (req, res) => {
 
     let imageUrl = null;
     if (image) {
-      const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
-      imageUrl = uploadResult.secure_url;
+      if (image.startsWith("http")) {
+        imageUrl = image;
+      } else {
+        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
+        imageUrl = uploadResult.secure_url;
+      }
       await Item.updateOne({ _id: itemId }, { currentImage: imageUrl });
     }
 
@@ -185,8 +207,12 @@ export const toggleMaintenance = async (req, res) => {
     
     let imageUrl = null;
     if (image) {
-      const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
-      imageUrl = uploadResult.secure_url;
+      if (image.startsWith("http")) {
+        imageUrl = image;
+      } else {
+        const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
+        imageUrl = uploadResult.secure_url;
+      }
       item.currentImage = imageUrl;
       await item.save();
     }

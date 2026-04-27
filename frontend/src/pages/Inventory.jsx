@@ -64,37 +64,32 @@ const Inventory = () => {
   const [filterEmail, setFilterEmail] = useState("");
   const [searchedUser, setSearchedUser] = useState(null);
 
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("app_theme") === "dark");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
-    if (isDarkMode) {
-      // rich dark slate theme
-      document.documentElement.style.setProperty("--theme-bg", "#0F172A");
-      document.documentElement.style.setProperty("--theme-panel", "#1E293B");
-      document.documentElement.style.setProperty("--theme-text", "#F8FAFC");
-      document.documentElement.style.setProperty("--theme-accent", "#3B82F6"); // keeping your blue
-      document.documentElement.style.setProperty("--theme-border", "#334155"); // visible dividers
-      document.documentElement.style.setProperty("--theme-text-muted", "#94A3B8"); // readable gray
-      localStorage.setItem("app_theme", "dark");
-    } else {
-      // your original light theme
-      document.documentElement.style.setProperty("--theme-bg", "#F4F7FB");
-      document.documentElement.style.setProperty("--theme-panel", "#FFFFFF");
-      document.documentElement.style.setProperty("--theme-text", "#111827");
-      document.documentElement.style.setProperty("--theme-accent", "#3B82F6");
-      document.documentElement.style.setProperty("--theme-border", "#E5E7EB");
-      document.documentElement.style.setProperty("--theme-text-muted", "#6B7280");
-      localStorage.setItem("app_theme", "light");
-    }
-  }, [isDarkMode]);
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilterEmail(filterEmailInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filterEmailInput]);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      const searchQ = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : "";
       const folderQuery = currentFolderId ? `?parent=${currentFolderId}` : "?parent=";
       const statusQ = statusFilter !== "All" ? `&status=${statusFilter}` : "";
       const emailQ = filterEmail ? `&userEmail=${encodeURIComponent(filterEmail)}` : "";
-      const itemQuery = `?page=${page}&limit=${limit}&folder=${currentFolderId || "null"}${statusQ}${emailQ}`;
+      
+      // If there's a search term, we might want to search globally instead of just in the current folder.
+      // But we still pass folder in the URL, the backend will handle if search overrides it.
+      const itemQuery = `?page=${page}&limit=${limit}&folder=${currentFolderId || "null"}${statusQ}${emailQ}${searchQ}`;
       
       const [foldersRes, itemsRes, usersRes] = await Promise.all([
         api.get(`/folders${folderQuery}`),
@@ -111,7 +106,7 @@ const Inventory = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, currentFolderId, statusFilter, filterEmail]);
+  }, [page, limit, currentFolderId, statusFilter, filterEmail, debouncedSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -143,6 +138,29 @@ const Inventory = () => {
     setSearchTerm("");
   };
 
+  // --- DRAG AND DROP HANDLERS ---
+  const handleDragStart = (e, item) => {
+    e.dataTransfer.setData("itemId", item._id);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // Necessary to allow dropping
+  };
+
+  const handleDrop = async (e, targetFolderId) => {
+    e.preventDefault();
+    const itemId = e.dataTransfer.getData("itemId");
+    if (!itemId) return;
+
+    try {
+      await api.put(`/items/${itemId}/move`, { newFolderId: targetFolderId });
+      toast.success("Item moved successfully");
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to move item");
+    }
+  };
+
   const showConfirm = (title, message, action, isDestructive = false) => setConfirmModal({ isOpen: true, title, message, action, isDestructive });
   const closeConfirm = () => setConfirmModal({ isOpen: false, title: "", message: "", action: null, isDestructive: false });
 
@@ -160,6 +178,15 @@ const Inventory = () => {
     }
   };
 
+  // --- TWO STEP ARCHITECTURE ---
+  const uploadImageFirst = async (file) => {
+    if (!file) return null;
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await api.post("/items/upload", formData);
+    return res.data.url; // returns the cloudinary url
+  };
+
   const handleAddItem = async (e) => {
     e.preventDefault();
     if (!newItem.identifier.trim()) return toast.error("asset identifier is required");
@@ -175,15 +202,6 @@ const Inventory = () => {
     } catch (error) {
       toast.error("failed to add asset");
     }
-  };
-
-  // --- TWO STEP ARCHITECTURE ---
-  const uploadImageFirst = async (file) => {
-    if (!file) return null;
-    const formData = new FormData();
-    formData.append("image", file);
-    const res = await api.post("/items/upload", formData);
-    return res.data.url; // returns the cloudinary url
   };
 
   const handleAssignSubmit = async (e) => {
@@ -357,9 +375,6 @@ const Inventory = () => {
   return (
     <div className="space-y-8 max-w-7xl mx-auto relative pb-12 px-4 sm:px-0">
       <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4 pb-4 md:pb-8 relative">
-        <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute right-0 top-0 p-2.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] bg-[var(--theme-panel)] rounded-full border border-[var(--theme-border)] shadow-sm transition-all">
-          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </button>
         <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--theme-accent)]/10 text-[var(--theme-accent)] text-xs font-bold tracking-wider uppercase">
           <span className="h-2 w-2 rounded-full bg-[var(--theme-accent)] animate-pulse"></span>
           inventory directory
@@ -373,7 +388,7 @@ const Inventory = () => {
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar w-full xl:w-auto">
             {breadcrumbs.map((crumb, idx) => (
-              <div key={crumb.id || 'root'} className="flex items-center gap-2 whitespace-nowrap">
+              <div key={crumb.id || 'root'} className="flex items-center gap-2 whitespace-nowrap" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, crumb.id)}>
                 <button onClick={() => navigateToBreadcrumb(idx)} className={`text-sm font-semibold transition-colors ${idx === breadcrumbs.length - 1 ? "text-[var(--theme-text)]" : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"}`}>{crumb.name}</button>
                 {idx < breadcrumbs.length - 1 && <ChevronRight className="h-4 w-4 text-[var(--theme-border)]" />}
               </div>
@@ -391,22 +406,12 @@ const Inventory = () => {
           </div>
           <div className="relative flex-1">
             <Search className="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" />
-            <input 
+              <input 
               type="text" 
-              placeholder="filter by user email... (press enter)" 
+              placeholder="filter by user email..." 
               value={filterEmailInput} 
               onChange={(e) => {
                 setFilterEmailInput(e.target.value);
-                if (e.target.value === "") {
-                  setFilterEmail("");
-                  setPage(1);
-                }
-              }} 
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setFilterEmail(filterEmailInput);
-                  setPage(1);
-                }
               }} 
               className="w-full pl-11 pr-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm font-medium focus:outline-none" 
             />
@@ -447,7 +452,7 @@ const Inventory = () => {
           <h3 className="text-lg font-bold text-[var(--theme-text)] flex items-center gap-2">folders</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {filteredFolders.map(folder => (
-              <div key={folder._id} onClick={() => navigateToFolder(folder)} className="group relative bg-[var(--theme-panel)] p-5 rounded-[1.5rem] border border-[var(--theme-border)] shadow-sm hover:shadow-md cursor-pointer transition-all flex items-center justify-between">
+              <div key={folder._id} onClick={() => navigateToFolder(folder)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, folder._id)} className="group relative bg-[var(--theme-panel)] p-5 rounded-[1.5rem] border border-[var(--theme-border)] shadow-sm hover:shadow-md cursor-pointer transition-all flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-[var(--theme-accent)]/10 flex items-center justify-center text-[var(--theme-accent)]"><FolderIcon className="h-6 w-6" /></div>
                   <h4 className="font-bold text-[var(--theme-text)] text-base">{folder.name}</h4>
@@ -466,7 +471,7 @@ const Inventory = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredItems.map(item => (
-              <div key={item._id} className="bg-[var(--theme-panel)] p-5 rounded-[1.5rem] border border-[var(--theme-border)] shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+              <div key={item._id} draggable onDragStart={(e) => handleDragStart(e, item)} className="bg-[var(--theme-panel)] p-5 rounded-[1.5rem] border border-[var(--theme-border)] shadow-sm flex flex-col gap-4 relative overflow-hidden group hover:shadow-md transition-shadow cursor-pointer" onClick={() => openHistory(item)}>
                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${item.status === 'Available' ? 'bg-[#10B981]' : item.status === 'Assigned' ? 'bg-[#3B82F6]' : 'bg-[#F59E0B]'}`}></div>
                 <div className="flex justify-between items-start pl-2">
                   <div className="flex gap-3">
@@ -478,12 +483,12 @@ const Inventory = () => {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${item.status === 'Available' ? 'bg-[#10B981]/10 text-[#10B981]' : item.status === 'Assigned' ? 'bg-[#3B82F6]/10 text-[#3B82F6]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}`}>{item.status}</span>
-                    <button onClick={() => handleDeleteItem(item._id)} className="opacity-0 group-hover:opacity-100 p-1 text-[var(--theme-text-muted)] hover:text-red-500 transition-opacity"><Trash2 className="h-3 w-3" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteItem(item._id); }} className="opacity-0 group-hover:opacity-100 p-1 text-[var(--theme-text-muted)] hover:text-red-500 transition-opacity"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 </div>
                 <div className="pl-2 flex items-center justify-between mt-2">
                   <div className="text-sm font-medium text-[var(--theme-text-muted)] flex items-center gap-2 max-w-[50%] overflow-hidden">{item.assignedTo ? <span className="truncate">{item.assignedTo.fullname}</span> : "unassigned"}</div>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                     {item.currentImage && <button onClick={() => { setViewingImage(item.currentImage); setIsImageViewerOpen(true); }} className="p-2 bg-[var(--theme-bg)] hover:bg-purple-500/10 text-purple-500 rounded-lg"><ImageIcon className="h-4 w-4" /></button>}
                     {item.status === "Available" && <button onClick={() => { setSelectedItem(item); setIsAssignModalOpen(true); }} className="p-2 bg-[var(--theme-bg)] hover:bg-[var(--theme-accent)]/10 text-[var(--theme-accent)] rounded-lg"><UserPlus className="h-4 w-4" /></button>}
                     {item.status === "Assigned" && <button onClick={() => { setSelectedItem(item); setIsReturnModalOpen(true); }} className="p-2 bg-[var(--theme-bg)] hover:bg-[#10B981]/10 text-[#10B981] rounded-lg"><RotateCcw className="h-4 w-4" /></button>}

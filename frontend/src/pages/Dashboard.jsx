@@ -100,10 +100,10 @@ const Dashboard = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-[var(--theme-text)] tracking-tight">
             Overview
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-[var(--theme-text-muted)] mt-1">
             Real-time statistics across the institution
           </p>
         </div>
@@ -116,7 +116,7 @@ const Dashboard = () => {
           return (
             <div
               key={index}
-              className="bg-white/60 backdrop-blur-xl border border-white/80 p-6 rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center gap-5 transition-transform hover:-translate-y-1 duration-300"
+              className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-6 rounded-4xl shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1 duration-300"
             >
               <div
                 className={`h-14 w-14 rounded-2xl flex items-center justify-center ${metric.bg}`}
@@ -124,10 +124,10 @@ const Dashboard = () => {
                 <Icon className={`h-7 w-7 ${metric.color}`} />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">
+                <p className="text-sm font-medium text-[var(--theme-text-muted)]">
                   {metric.title}
                 </p>
-                <h3 className="text-3xl font-bold text-gray-900 mt-1">
+                <h3 className="text-3xl font-bold text-[var(--theme-text)] mt-1">
                   {metric.value}
                 </h3>
               </div>
@@ -139,8 +139,8 @@ const Dashboard = () => {
       {/* Middle Row: Charts & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Inventory Distribution Chart */}
-        <div className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-4xladow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">
+        <div className="lg:col-span-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] p-8 rounded-4xl shadow-sm">
+          <h2 className="text-lg font-bold text-[var(--theme-text)] mb-6">
             Inventory Distribution
           </h2>
           <div className="h-72">
@@ -175,18 +175,18 @@ const Dashboard = () => {
         </div>
 
         {/* Right: Administrative Alerts */}
-        <div className="bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col">
-          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-gray-400" />
+        <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-8 rounded-4xl shadow-sm flex flex-col">
+          <h2 className="text-lg font-bold text-[var(--theme-text)] mb-6 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-[var(--theme-text-muted)]" />
             System Status
           </h2>
 
           <div className="flex-1 space-y-4">
-            <div className="bg-gray-50/50 rounded-2xl p-5 border border-gray-100">
-              <p className="text-sm text-gray-500 font-medium">
+            <div className="bg-[var(--theme-bg)] rounded-2xl p-5 border border-[var(--theme-border)]">
+              <p className="text-sm text-[var(--theme-text-muted)] font-medium">
                 Total Registered Users
               </p>
-              <h4 className="text-3xl font-bold text-gray-900 mt-2">
+              <h4 className="text-3xl font-bold text-[var(--theme-text)] mt-2">
                 {userOverview.total}
               </h4>
             </div>
@@ -212,34 +212,34 @@ const Dashboard = () => {
       </div>
 
       {/* Bottom Row: Recent Activity Feed */}
-      <div className="bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <Activity className="h-5 w-5 text-gray-400" />
+      <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-8 rounded-4xl shadow-sm">
+        <h2 className="text-lg font-bold text-[var(--theme-text)] mb-6 flex items-center gap-2">
+          <Activity className="h-5 w-5 text-[var(--theme-text-muted)]" />
           Recent Hardware Activity
         </h2>
 
         {recentActivity.length === 0 ? (
-          <p className="text-gray-500 text-center py-6">
+          <p className="text-[var(--theme-text-muted)] text-center py-6">
             No recent activity found.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="pb-3 text-sm font-semibold text-gray-500 pl-2">
+                <tr className="border-b border-[var(--theme-border)]">
+                  <th className="pb-3 text-sm font-semibold text-[var(--theme-text-muted)] pl-2">
                     Asset Name
                   </th>
-                  <th className="pb-3 text-sm font-semibold text-gray-500">
+                  <th className="pb-3 text-sm font-semibold text-[var(--theme-text-muted)]">
                     ID Tag
                   </th>
-                  <th className="pb-3 text-sm font-semibold text-gray-500">
+                  <th className="pb-3 text-sm font-semibold text-[var(--theme-text-muted)]">
                     Current Status
                   </th>
-                  <th className="pb-3 text-sm font-semibold text-gray-500">
+                  <th className="pb-3 text-sm font-semibold text-[var(--theme-text-muted)]">
                     Assigned To
                   </th>
-                  <th className="pb-3 text-sm font-semibold text-gray-500 text-right pr-2">
+                  <th className="pb-3 text-sm font-semibold text-[var(--theme-text-muted)] text-right pr-2">
                     Last Updated
                   </th>
                 </tr>
@@ -248,12 +248,12 @@ const Dashboard = () => {
                 {recentActivity.map((item) => (
                   <tr
                     key={item._id}
-                    className="border-b border-gray-100 hover:bg-white/40 transition-colors"
+                    className="border-b border-[var(--theme-border)] hover:bg-[var(--theme-bg)] transition-colors"
                   >
-                    <td className="py-4 pl-2 font-medium text-gray-900">
+                    <td className="py-4 pl-2 font-medium text-[var(--theme-text)]">
                       {item.name}
                     </td>
-                    <td className="py-4 text-sm text-gray-500 font-mono">
+                    <td className="py-4 text-sm text-[var(--theme-text-muted)] font-mono">
                       {item.identifier}
                     </td>
                     <td className="py-4">
@@ -267,14 +267,14 @@ const Dashboard = () => {
                         {item.status}
                       </span>
                     </td>
-                    <td className="py-4 text-sm text-gray-700">
+                    <td className="py-4 text-sm text-[var(--theme-text)]">
                       {item.assignedTo ? (
                         item.assignedTo.fullname
                       ) : (
-                        <span className="text-gray-400 italic">Unassigned</span>
+                        <span className="text-[var(--theme-text-muted)] italic">Unassigned</span>
                       )}
                     </td>
-                    <td className="py-4 text-sm text-gray-500 text-right pr-2">
+                    <td className="py-4 text-sm text-[var(--theme-text-muted)] text-right pr-2">
                       {new Date(item.updatedAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
