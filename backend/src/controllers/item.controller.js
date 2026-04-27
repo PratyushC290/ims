@@ -11,9 +11,10 @@ import { cloudinary } from "../config/cloudinary.js";
 
 export const createItem = async (req, res) => {
   try {
-    const { identifier, folder } = req.body;
+    const { identifier, name, folder } = req.body;
     const newItem = await Item.create({
       identifier,
+      name: name || "Unnamed Asset",
       status: "Available",
       assignedTo: null,
       folder: folder || null,
@@ -43,12 +44,15 @@ export const getAllItems = async (req, res) => {
     if (status) query.status = status;
     if (folder !== undefined) query.folder = folder === "null" ? null : folder;
     if (search) {
-      query.$or = [{ identifier: { $regex: search, $options: "i" } }];
+      query.$or = [
+        { identifier: { $regex: search, $options: "i" } },
+        { name: { $regex: search, $options: "i" } }
+      ];
     }
     if (userEmail) {
-      const user = await User.findOne({ instituteEmail: userEmail });
-      if (user) {
-        query.assignedTo = user._id;
+      const users = await User.find({ instituteEmail: { $regex: userEmail, $options: "i" } });
+      if (users.length > 0) {
+        query.assignedTo = { $in: users.map(u => u._id) };
       } else {
         query.assignedTo = "000000000000000000000000"; // Dummy ID if user not found
       }
@@ -97,6 +101,8 @@ export const assignItem = async (req, res) => {
     if (image) {
       const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
       imageUrl = uploadResult.secure_url;
+      item.currentImage = imageUrl;
+      await item.save();
     }
 
     await History.create({
@@ -131,6 +137,7 @@ export const returnItem = async (req, res) => {
     if (image) {
       const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
       imageUrl = uploadResult.secure_url;
+      await Item.updateOne({ _id: itemId }, { currentImage: imageUrl });
     }
 
     await History.create({
@@ -180,6 +187,8 @@ export const toggleMaintenance = async (req, res) => {
     if (image) {
       const uploadResult = await cloudinary.uploader.upload(image, { folder: "ims_returns" });
       imageUrl = uploadResult.secure_url;
+      item.currentImage = imageUrl;
+      await item.save();
     }
 
     await History.create({
@@ -210,6 +219,7 @@ export const createBulkItems = async (req, res) => {
 
     const formattedItems = items.map((item) => ({
       identifier: item.identifier,
+      name: item.name || item.identifier,
       status: "Available",
       assignedTo: null,
     }));

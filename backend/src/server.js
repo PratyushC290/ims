@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -31,7 +32,11 @@ app.use("/api/history", historyRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "Server is running, Database is connected!" });
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.status(200).json({
+    status: "Server is running",
+    database: isDbConnected ? "connected" : "disconnected",
+  });
 });
 
 const PORT = process.env.PORT || 5000;

@@ -16,9 +16,11 @@ import api from "../api";
 
 const Layout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+  const [userProfile, setUserProfile] = useState({ name: "User", initial: "U", email: "" });
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -94,6 +96,20 @@ const Layout = () => {
   };
 
   useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserProfile({
+          name: payload.name || payload.fullname || "Admin",
+          initial: (payload.name || payload.fullname || "U").charAt(0).toUpperCase(),
+          email: payload.email || ""
+        });
+      }
+    } catch (e) {
+      console.error("Failed to decode token", e);
+    }
+
     const loadNotifications = async () => {
       await fetchNotifications();
     };
@@ -166,15 +182,6 @@ const Layout = () => {
           })}
         </nav>
 
-        <div className="p-4 mt-auto">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[var(--theme-text-muted)] hover:bg-red-500/10 hover:text-red-500 transition-colors font-medium"
-          >
-            <LogOut className="h-5 w-5" />
-            Logout
-          </button>
-        </div>
       </aside>
 
       {/* MAIN CONTENT WRAPPER */}
@@ -257,8 +264,31 @@ const Layout = () => {
                 </div>
               )}
             </div>
-            <div className="h-10 w-10 rounded-full bg-blue-600 shadow-sm border-2 border-[var(--theme-panel)] flex items-center justify-center text-white font-bold text-sm">
-              A
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="h-10 w-10 rounded-full bg-blue-600 shadow-sm border-2 border-[var(--theme-panel)] flex items-center justify-center text-white font-bold text-sm hover:ring-2 hover:ring-blue-500/50 transition-all"
+              >
+                {userProfile.initial}
+              </button>
+              
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-3 w-56 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-4 border-b border-[var(--theme-border)]">
+                    <p className="text-sm font-bold text-[var(--theme-text)] truncate">{userProfile.name}</p>
+                    {userProfile.email && <p className="text-xs text-[var(--theme-text-muted)] truncate mt-0.5">{userProfile.email}</p>}
+                  </div>
+                  <div className="p-2">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>

@@ -5,7 +5,7 @@ import {
   PackagePlus, MonitorSmartphone, Search, Wrench, RotateCcw,
   UserPlus, Loader2, X, Folder as FolderIcon, FolderPlus,
   ChevronRight, Users, UserMinus, CornerUpLeft, Trash2, 
-  AlertTriangle, History as HistoryIcon, Upload, Moon, Sun, MessageSquareText
+  AlertTriangle, History as HistoryIcon, Upload, Moon, Sun, MessageSquareText, Image as ImageIcon
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -30,7 +30,7 @@ const Inventory = () => {
   
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", action: null, isDestructive: false });
 
-  const [newItem, setNewItem] = useState({ identifier: "" });
+  const [newItem, setNewItem] = useState({ identifier: "", name: "" });
   const [newFolderName, setNewFolderName] = useState("");
   const [selectedItem, setSelectedItem] = useState(null); 
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -52,6 +52,8 @@ const Inventory = () => {
   
   const [itemHistory, setItemHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [viewingImage, setViewingImage] = useState(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState("All");
   const [pagination, setPagination] = useState(null);
@@ -115,14 +117,14 @@ const Inventory = () => {
 
   useEffect(() => {
     if (filterEmail && users.length > 0) {
-      const user = users.find(u => u.instituteEmail.toLowerCase() === filterEmail.toLowerCase());
+      const user = users.find(u => u.instituteEmail.toLowerCase().includes(filterEmail.toLowerCase()));
       setSearchedUser(user || null);
     } else {
       setSearchedUser(null);
     }
   }, [filterEmail, users]);
 
-  const filteredItems = useMemo(() => items.filter((item) => item.identifier.toLowerCase().includes(searchTerm.toLowerCase())), [items, searchTerm]);
+  const filteredItems = useMemo(() => items.filter((item) => item.identifier.toLowerCase().includes(searchTerm.toLowerCase()) || (item.name && item.name.toLowerCase().includes(searchTerm.toLowerCase()))), [items, searchTerm]);
   const filteredFolders = useMemo(() => folders.filter((folder) => folder.name.toLowerCase().includes(searchTerm.toLowerCase())), [folders, searchTerm]);
   const filteredUsers = useMemo(() => users.filter((u) => u.accountStatus === "Approved").filter((u) => u.fullname.toLowerCase().includes(userSearch.toLowerCase()) || u.instituteEmail.toLowerCase().includes(userSearch.toLowerCase())), [users, userSearch]);
 
@@ -166,7 +168,7 @@ const Inventory = () => {
       await api.post("/items", { ...newItem, folder: currentFolderId, image: uploadedUrl });
       toast.success(`asset added`);
       setIsAddModalOpen(false);
-      setNewItem({ identifier: "" });
+      setNewItem({ identifier: "", name: "" });
       setAddAssetImageFile(null);
       setAddAssetImagePreview(null);
       fetchData();
@@ -469,7 +471,10 @@ const Inventory = () => {
                 <div className="flex justify-between items-start pl-2">
                   <div className="flex gap-3">
                     <div className="mt-1 h-10 w-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] flex items-center justify-center text-[var(--theme-text)]"><MonitorSmartphone className="h-5 w-5" /></div>
-                    <h4 className="font-mono text-lg font-bold text-[var(--theme-text)] tracking-tight">{item.identifier}</h4>
+                    <div className="flex flex-col">
+                      <h4 className="text-lg font-bold text-[var(--theme-text)] tracking-tight">{item.name || "Unnamed Asset"}</h4>
+                      <span className="font-mono text-xs font-semibold text-[var(--theme-text-muted)]">{item.identifier}</span>
+                    </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${item.status === 'Available' ? 'bg-[#10B981]/10 text-[#10B981]' : item.status === 'Assigned' ? 'bg-[#3B82F6]/10 text-[#3B82F6]' : 'bg-[#F59E0B]/10 text-[#F59E0B]'}`}>{item.status}</span>
@@ -479,6 +484,7 @@ const Inventory = () => {
                 <div className="pl-2 flex items-center justify-between mt-2">
                   <div className="text-sm font-medium text-[var(--theme-text-muted)] flex items-center gap-2 max-w-[50%] overflow-hidden">{item.assignedTo ? <span className="truncate">{item.assignedTo.fullname}</span> : "unassigned"}</div>
                   <div className="flex gap-1.5">
+                    {item.currentImage && <button onClick={() => { setViewingImage(item.currentImage); setIsImageViewerOpen(true); }} className="p-2 bg-[var(--theme-bg)] hover:bg-purple-500/10 text-purple-500 rounded-lg"><ImageIcon className="h-4 w-4" /></button>}
                     {item.status === "Available" && <button onClick={() => { setSelectedItem(item); setIsAssignModalOpen(true); }} className="p-2 bg-[var(--theme-bg)] hover:bg-[var(--theme-accent)]/10 text-[var(--theme-accent)] rounded-lg"><UserPlus className="h-4 w-4" /></button>}
                     {item.status === "Assigned" && <button onClick={() => { setSelectedItem(item); setIsReturnModalOpen(true); }} className="p-2 bg-[var(--theme-bg)] hover:bg-[#10B981]/10 text-[#10B981] rounded-lg"><RotateCcw className="h-4 w-4" /></button>}
                     <button onClick={() => { setSelectedItem(item); setIsMaintenanceModalOpen(true); }} className="p-2 bg-[var(--theme-bg)] hover:bg-[#F59E0B]/10 text-[#F59E0B] rounded-lg"><Wrench className="h-4 w-4" /></button>
@@ -634,8 +640,12 @@ const Inventory = () => {
             <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">add new asset</h2>
             <form onSubmit={handleAddItem} className="space-y-4 mt-4">
               <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">asset name</label>
+                <input type="text" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="e.g. MacBook Pro M3" className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none" autoFocus />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">asset identifier</label>
-                <input type="text" value={newItem.identifier} onChange={(e) => setNewItem({ ...newItem, identifier: e.target.value })} placeholder="e.g. MBP-2024-001" className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none" autoFocus />
+                <input type="text" value={newItem.identifier} onChange={(e) => setNewItem({ ...newItem, identifier: e.target.value })} placeholder="e.g. MBP-2024-001" className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">photo (optional)</label>
@@ -646,6 +656,15 @@ const Inventory = () => {
               </div>
               <button type="submit" className="w-full py-3 mt-4 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl font-bold">add asset</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isImageViewerOpen && viewingImage && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setIsImageViewerOpen(false)}>
+          <div className="relative max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setIsImageViewerOpen(false)} className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white bg-black/50 rounded-full"><X className="h-6 w-6" /></button>
+            <img src={viewingImage} alt="Asset Image" className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
           </div>
         </div>
       )}

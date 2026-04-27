@@ -8,6 +8,16 @@ const itemSchema = new Schema(
       unique: true,
       trim: true,
     },
+    name: {
+      type: String,
+      required: true,
+      default: "Unnamed Asset",
+      trim: true,
+    },
+    currentImage: {
+      type: String,
+      default: null,
+    },
     status: {
       type: String,
       enum: ["Available", "Assigned", "Under Maintenance", "Retired"],
