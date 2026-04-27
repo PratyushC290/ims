@@ -1,7 +1,7 @@
 // edited for stock-based catalog
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback } from "react";
-import { PackagePlus, Search, Loader2, X, Folder as FolderIcon, FolderPlus, ChevronRight, Package, AlertTriangle, History as HistoryIcon, Plus, Minus, ArrowLeftRight, RotateCcw, Edit2, CheckCircle } from "lucide-react";
+import { PackagePlus, Search, Loader2, X, Package, AlertTriangle, History as HistoryIcon, Plus, Edit2, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import Pagination from "../components/Pagination";
@@ -10,9 +10,6 @@ const Inventory = () => {
   const [items, setItems] = useState([]);
   const [issuedAssets, setIssuedAssets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [folders, setFolders] = useState([]);
-  const [currentFolderId, setCurrentFolderId] = useState(null);
-  const [breadcrumbs, setBreadcrumbs] = useState([{ id: null, name: "Catalog" }]);
   const [activeTab, setActiveTab] = useState("catalog");
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -21,15 +18,12 @@ const Inventory = () => {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [itemHistory, setItemHistory] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
 
   const [newItem, setNewItem] = useState({ name: "", category: "", totalQuantity: 0 });
   const [editItem, setEditItem] = useState({ name: "", category: "", totalQuantity: 0 });
-  const [newFolderName, setNewFolderName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [issuedSearch, setIssuedSearch] = useState("");
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [assignForm, setAssignForm] = useState({
@@ -41,13 +35,11 @@ const Inventory = () => {
   ]);
   const [assignItemsSelected, setAssignItemsSelected] = useState([{}]);
   const [assignUserSearch, setAssignUserSearch] = useState("");
-  const [assignHardwareSearch, setAssignHardwareSearch] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (currentFolderId) params.append("folder", currentFolderId);
       if (searchTerm) params.append("search", searchTerm);
       params.append("page", page);
       params.append("limit", 20);
@@ -60,7 +52,7 @@ const Inventory = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentFolderId, searchTerm, page, activeTab]);
+  }, [searchTerm, page, activeTab]);
 
   useEffect(() => {
     fetchData();
@@ -69,7 +61,7 @@ const Inventory = () => {
   useEffect(() => {
     setPage(1);
     setSearchTerm("");
-  }, [currentFolderId, activeTab]);
+  }, [activeTab]);
 
   const handleAddItem = async (e) => {
     e.preventDefault();
@@ -86,20 +78,6 @@ const Inventory = () => {
     }
   };
 
-  const handleAddFolder = async (e) => {
-    e.preventDefault();
-    if (!newFolderName.trim()) return;
-    try {
-      await api.post("/folders", { name: newFolderName, parent: currentFolderId });
-      toast.success("Folder created");
-      setIsAddFolderModalOpen(false);
-      setNewFolderName("");
-      fetchData();
-    } catch (error) {
-      toast.error("Failed to create folder");
-    }
-  };
-
   const handleDeleteItem = async (itemId) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
     try {
@@ -109,13 +87,6 @@ const Inventory = () => {
     } catch (error) {
       toast.error("Failed to delete item");
     }
-  };
-
-  const navigateToBreadcrumb = (index) => {
-    const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
-    setBreadcrumbs(newBreadcrumbs);
-    setCurrentFolderId(newBreadcrumbs[newBreadcrumbs.length - 1].id);
-    setPage(1);
   };
 
   const handleDragOver = (e) => {
@@ -329,26 +300,10 @@ const Inventory = () => {
 
       <div className="bg-[var(--theme-panel)] rounded-2xl shadow-sm border border-[var(--theme-border)] p-4">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0">
-            {breadcrumbs.map((crumb, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <button
-                  onClick={() => navigateToBreadcrumb(idx)}
-                  className={`text-sm font-semibold ${idx === breadcrumbs.length - 1 ? "text-[var(--theme-text)]" : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"}`}
-                >
-                  {crumb.name}
-                </button>
-                {idx < breadcrumbs.length - 1 && <ChevronRight className="h-4 w-4 text-[var(--theme-border)]" />}
-              </div>
-            ))}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-[var(--theme-text)]">Catalog</span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsAddFolderModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--theme-accent)]/10 text-[var(--theme-accent)] rounded-xl text-sm font-bold hover:bg-[var(--theme-accent)]/20"
-            >
-              <FolderPlus className="h-4 w-4" /> New Folder
-            </button>
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl text-sm font-bold hover:opacity-80"
@@ -484,29 +439,6 @@ const Inventory = () => {
               </div>
               <button type="submit" className="w-full py-3 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl font-bold">
                 Add Item
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isAddFolderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-sm w-full p-6 relative border border-[var(--theme-border)]">
-            <button onClick={() => setIsAddFolderModalOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
-              <X className="h-4 w-4" />
-            </button>
-            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-4">New Folder</h2>
-            <form onSubmit={handleAddFolder} className="space-y-4">
-              <input
-                type="text"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="Folder name"
-                className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl"
-              />
-              <button type="submit" className="w-full py-3 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl font-bold">
-                Create Folder
               </button>
             </form>
           </div>

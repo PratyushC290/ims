@@ -2,12 +2,11 @@ import { Item } from "../models/Item.js";
 import { IssuedAsset } from "../models/IssuedAsset.js";
 import { User } from "../models/User.js";
 import { History } from "../models/History.js";
-import { Folder } from "../models/Folder.js";
 import { ActionLog } from "../models/ActionLog.js";
 
 export const createItem = async (req, res) => {
   try {
-    const { name, category, description, totalQuantity, folder } = req.body;
+    const { name, category, description, totalQuantity } = req.body;
 
     if (!name || !totalQuantity) {
       return res.status(400).json({ message: "Name and total quantity are required." });
@@ -19,7 +18,6 @@ export const createItem = async (req, res) => {
       description: description || "",
       totalQuantity: Number(totalQuantity),
       availableQuantity: Number(totalQuantity),
-      folder: folder || null,
     });
 
     res.status(201).json({
@@ -27,7 +25,7 @@ export const createItem = async (req, res) => {
       item: newItem,
     });
   } catch (error) {
-    console.error("CreateItem Error:", error); // Debug log
+    console.error("CreateItem Error:", error);
     res.status(500).json({ 
       message: "Server error", 
       error: error.message,
@@ -38,18 +36,9 @@ export const createItem = async (req, res) => {
   }
 };
 
-const getDescendantFolders = async (parentId) => {
-  const children = await Folder.find({ parent: parentId });
-  let descendants = [...children.map(c => c._id)];
-  for (let child of children) {
-    descendants = descendants.concat(await getDescendantFolders(child._id));
-  }
-  return descendants;
-};
-
 export const getAllItems = async (req, res) => {
   try {
-    const { status, category, search, folder } = req.query;
+    const { status, category, search } = req.query;
 
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
@@ -65,13 +54,6 @@ export const getAllItems = async (req, res) => {
     
     if (category) {
       query.category = category;
-    }
-
-    if (folder !== undefined) {
-      if (folder && folder !== "null") {
-        const descendantIds = await getDescendantFolders(folder);
-        query.folder = { $in: [folder, ...descendantIds] };
-      }
     }
 
     const [items, totalItems] = await Promise.all([
@@ -329,23 +311,6 @@ export const deleteItem = async (req, res) => {
       return res.status(404).json({ message: "Item not found." });
     }
     res.status(200).json({ message: "Item deleted successfully." });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-export const moveItem = async (req, res) => {
-  try {
-    const { itemId } = req.params;
-    const { newFolderId } = req.body;
-    
-    const item = await Item.findById(itemId);
-    if (!item) return res.status(404).json({ message: "Item not found." });
-    
-    item.folder = newFolderId || null;
-    await item.save();
-
-    res.status(200).json({ message: "Item moved successfully.", item });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

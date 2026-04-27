@@ -29,11 +29,6 @@ const itemSchema = new Schema(
       min: 0,
       default: 0,
     },
-    folder: {
-      type: Schema.Types.ObjectId,
-      ref: "Folder",
-      default: null,
-    },
   },
   {
     timestamps: true,
