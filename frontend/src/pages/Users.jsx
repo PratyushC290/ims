@@ -426,7 +426,9 @@ const Users = () => {
                       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
                       ${user.role === "Super Admin" ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" : ""}
                       ${user.role === "Admin" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : ""}
-                      ${["Student", "Staff", "Faculty"].includes(user.role) ? "bg-gray-500/10 text-gray-500 border-gray-500/20" : ""}
+                      ${user.role === "Student" ? "bg-cyan-500/10 text-cyan-500 border-cyan-500/20" : ""}
+                      ${user.role === "Staff" ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : ""}
+                      ${user.role === "Faculty" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : ""}
                     `}
                     >
                       {user.role}

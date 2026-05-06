@@ -56,47 +56,65 @@ export const getAllRequests = async (req, res) => {
   try {
     const { status, search, page = 1, limit = 20 } = req.query;
 
-    let query = {};
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const pipeline = [
+      { $lookup: { from: "users", localField: "user", foreignField: "_id", as: "userData" } },
+      { $unwind: { path: "$userData", preserveNullAndEmptyArrays: true } },
+    ];
+
+    const matchConditions = [];
 
     if (status) {
       const statusList = status.split(",");
       if (statusList.length > 1) {
-        query.status = { $in: statusList };
+        matchConditions.push({ status: { $in: statusList } });
       } else {
-        query.status = status;
+        matchConditions.push({ status });
       }
     }
 
     if (search) {
-      query.$or = [
-        { "items.itemType": { $regex: search, $options: "i" } },
-        { location: { $regex: search, $options: "i" } },
-        { reason: { $regex: search, $options: "i" } },
-        { "user.fullname": { $regex: search, $options: "i" } },
-        { "user.instituteEmail": { $regex: search, $options: "i" } },
-        { "user.studentId": { $regex: search, $options: "i" } },
-      ];
+      matchConditions.push({
+        $or: [
+          { "items.itemType": { $regex: search, $options: "i" } },
+          { location: { $regex: search, $options: "i" } },
+          { reason: { $regex: search, $options: "i" } },
+          { "userData.fullname": { $regex: search, $options: "i" } },
+          { "userData.instituteEmail": { $regex: search, $options: "i" } },
+          { "userData.studentId": { $regex: search, $options: "i" } },
+        ],
+      });
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    if (matchConditions.length > 0) {
+      pipeline.push({ $match: { $and: matchConditions } });
+    }
 
-    const [requests, total] = await Promise.all([
-      Request.find(query)
-        .populate("user", "fullname instituteEmail role studentId branch phoneNumber alternativeEmail phdGuide")
-        .sort({ createdAt: 1 })
-        .skip(skip)
-        .limit(parseInt(limit))
-        .lean(),
-      Request.countDocuments(query),
-    ]);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Request.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
+    pipeline.push({ $sort: { createdAt: 1 } });
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: limitNum });
+
+    const requests = await Request.aggregate(pipeline);
+
+    const requestsWithUser = requests.map((r) => ({
+      ...r,
+      user: r.userData || null,
+    }));
 
     res.status(200).json({
-      requests,
+      requests: requestsWithUser,
       pagination: {
         totalRequests: total,
-        totalPages: Math.ceil(total / limit),
-        currentPage: parseInt(page),
-        itemsPerPage: parseInt(limit),
+        totalPages: Math.ceil(total / limitNum),
+        currentPage: pageNum,
+        itemsPerPage: limitNum,
       },
     });
   } catch (error) {

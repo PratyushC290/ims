@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useDebounce } from "../hooks/useDebounce";
 import { Search, Clock, CheckCircle, XCircle, FileText, Filter, Loader2, Package, User, Calendar, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -16,16 +17,17 @@ const Requests = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [requestToPrint, setRequestToPrint] = useState(null);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     fetchRequests();
-  }, [activeTab, searchTerm]);
+  }, [activeTab, debouncedSearchTerm]);
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
       const statusFilter = activeTab === "pending" ? "Pending" : activeTab === "history" ? "Rejected,Fulfilled" : "";
-      const res = await api.get(`/requests/all?${statusFilter ? `status=${statusFilter}&` : ''}search=${searchTerm}`);
+      const res = await api.get(`/requests/all?${statusFilter ? `status=${statusFilter}&` : ''}search=${debouncedSearchTerm}`);
       setRequests(res.data.requests);
     } catch (error) {
       toast.error("Failed to fetch requests");
