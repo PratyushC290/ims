@@ -142,7 +142,7 @@ export const getUserHistory = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { fullname, instituteEmail, phoneNumber, role, accountStatus } = req.body;
+    const { fullname, phoneNumber, role, studentId, branch, alternativeEmail, phdGuide } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -150,10 +150,12 @@ export const updateUser = async (req, res) => {
     }
 
     if (fullname) user.fullname = fullname;
-    if (instituteEmail) user.instituteEmail = instituteEmail.toLowerCase();
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (role) user.role = role;
-    if (accountStatus) user.accountStatus = accountStatus;
+    if (studentId !== undefined) user.studentId = studentId;
+    if (branch !== undefined) user.branch = branch;
+    if (alternativeEmail !== undefined) user.alternativeEmail = alternativeEmail;
+    if (phdGuide !== undefined) user.phdGuide = phdGuide;
 
     await user.save();
 
@@ -166,6 +168,10 @@ export const updateUser = async (req, res) => {
         phoneNumber: user.phoneNumber,
         role: user.role,
         accountStatus: user.accountStatus,
+        studentId: user.studentId,
+        branch: user.branch,
+        alternativeEmail: user.alternativeEmail,
+        phdGuide: user.phdGuide,
       },
     });
   } catch (error) {

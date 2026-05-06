@@ -151,20 +151,38 @@ const Users = () => {
 
   const handleEditUser = async (e) => {
     e.preventDefault();
-    if (!editUser.fullname || !editUser.instituteEmail || !editUser.phoneNumber || !editUser.role) {
-      toast.error("All fields are required.");
+    if (!editUser.fullname || !editUser.phoneNumber || !editUser.role) {
+      toast.error("Name, phone number, and role are required.");
       return;
     }
 
     try {
       setIsEditing(true);
-      await api.put(`/users/${editUser._id}`, {
+      
+      const updateData = {
         fullname: editUser.fullname,
-        instituteEmail: editUser.instituteEmail,
         phoneNumber: editUser.phoneNumber,
         role: editUser.role,
-        accountStatus: editUser.accountStatus,
-      });
+      };
+
+      // Role is Student - include student fields
+      if (editUser.role === "Student") {
+        updateData.studentId = editUser.studentId;
+        updateData.branch = editUser.branch;
+        updateData.alternativeEmail = editUser.alternativeEmail;
+        updateData.phdGuide = editUser.phdGuide;
+      }
+      // Role is Faculty - include faculty fields
+      else if (editUser.role === "Faculty") {
+        updateData.branch = editUser.branch;
+        updateData.alternativeEmail = editUser.alternativeEmail;
+      }
+      // Role is Admin/Staff - include staff fields
+      else if (["Admin", "Staff"].includes(editUser.role)) {
+        updateData.alternativeEmail = editUser.alternativeEmail;
+      }
+
+      await api.put(`/users/${editUser._id}`, updateData);
       toast.success(`User ${editUser.fullname} has been updated successfully.`);
       setIsEditModalOpen(false);
       setEditUser(null);
@@ -184,6 +202,10 @@ const Users = () => {
       phoneNumber: user.phoneNumber || "",
       role: user.role,
       accountStatus: user.accountStatus,
+      studentId: user.studentId || "",
+      branch: user.branch || "",
+      alternativeEmail: user.alternativeEmail || "",
+      phdGuide: user.phdGuide || "",
     });
     setIsEditModalOpen(true);
   };
@@ -514,6 +536,34 @@ const Users = () => {
             </div>
 
             <form onSubmit={handleEditUser} className="space-y-4">
+              {/* Read-only fields - always displayed but not editable */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                  Institute Email
+                </label>
+                <input
+                  type="email"
+                  value={editUser.instituteEmail}
+                  disabled
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text-muted)] opacity-60 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                  Account Status
+                </label>
+                <select
+                  value={editUser.accountStatus}
+                  disabled
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text-muted)] opacity-60 cursor-not-allowed"
+                >
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Deactivated">Deactivated</option>
+                </select>
+              </div>
+
+              {/* Common fields - always editable */}
               <div>
                 <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
                   Full Name
@@ -524,19 +574,6 @@ const Users = () => {
                   placeholder="John Doe"
                   value={editUser.fullname}
                   onChange={(e) => setEditUser({ ...editUser, fullname: e.target.value })}
-                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                  Institute Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="john.doe@institute.edu"
-                  value={editUser.instituteEmail}
-                  onChange={(e) => setEditUser({ ...editUser, instituteEmail: e.target.value })}
                   className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 />
               </div>
@@ -566,23 +603,108 @@ const Users = () => {
                   <option value="Staff">Staff</option>
                   <option value="Faculty">Faculty</option>
                   <option value="Admin">Admin</option>
-                  <option value="Super Admin">Super Admin</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                  Account Status
-                </label>
-                <select
-                  value={editUser.accountStatus}
-                  onChange={(e) => setEditUser({ ...editUser, accountStatus: e.target.value })}
-                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Deactivated">Deactivated</option>
-                </select>
-              </div>
+
+              {/* Student-specific fields */}
+              {editUser.role === "Student" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                      Student ID / Roll Number
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., 21BCS001"
+                      value={editUser.studentId}
+                      onChange={(e) => setEditUser({ ...editUser, studentId: e.target.value })}
+                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                      Department / Branch
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Computer Science"
+                      value={editUser.branch}
+                      onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
+                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                      Alternative Email
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="personal@email.com"
+                      value={editUser.alternativeEmail}
+                      onChange={(e) => setEditUser({ ...editUser, alternativeEmail: e.target.value })}
+                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                      PhD Guide Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Dr. Guide Name"
+                      value={editUser.phdGuide}
+                      onChange={(e) => setEditUser({ ...editUser, phdGuide: e.target.value })}
+                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Faculty-specific fields (when role is Faculty) */}
+              {editUser.role === "Faculty" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Computer Science"
+                      value={editUser.branch}
+                      onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
+                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                      Alternative Email
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="personal@email.com"
+                      value={editUser.alternativeEmail}
+                      onChange={(e) => setEditUser({ ...editUser, alternativeEmail: e.target.value })}
+                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Admin/Staff-specific fields */}
+              {["Admin", "Staff"].includes(editUser.role) && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                    Alternative Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="personal@email.com"
+                    value={editUser.alternativeEmail}
+                    onChange={(e) => setEditUser({ ...editUser, alternativeEmail: e.target.value })}
+                    className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  />
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <button
