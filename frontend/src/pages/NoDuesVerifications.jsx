@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback } from "react";
+import { useDebounce } from "../hooks/useDebounce";
 import {
   Search,
   Loader2,
   Download,
-  Filter,
   FileText,
   User,
   Calendar,
@@ -26,15 +26,18 @@ const NoDuesVerifications = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
+  const debouncedFromDate = useDebounce(fromDate, 300);
+  const debouncedToDate = useDebounce(toDate, 300);
 
   const fetchVerifications = useCallback(
     async (fetchPage = 1) => {
       setLoading(true);
       try {
         let url = `/no-dues/verifications?page=${fetchPage}&limit=20`;
-        if (searchTerm) url += `&search=${searchTerm}`;
-        if (fromDate) url += `&fromDate=${fromDate}`;
-        if (toDate) url += `&toDate=${toDate}`;
+        if (debouncedSearch) url += `&search=${debouncedSearch}`;
+        if (debouncedFromDate) url += `&fromDate=${debouncedFromDate}`;
+        if (debouncedToDate) url += `&toDate=${debouncedToDate}`;
 
         const res = await api.get(url);
         setVerifications(res.data.verifications || []);
@@ -45,12 +48,12 @@ const NoDuesVerifications = () => {
         setLoading(false);
       }
     },
-    [searchTerm, fromDate, toDate]
+    [debouncedSearch, debouncedFromDate, debouncedToDate]
   );
 
   useEffect(() => {
-    fetchVerifications(page);
-  }, [page]);
+    fetchVerifications(1);
+  }, [debouncedSearch, debouncedFromDate, debouncedToDate]);
 
   const applyFilters = () => {
     setPage(1);
