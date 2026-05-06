@@ -11,6 +11,18 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
   const [htSearch, setHtSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState({});
 
+  const fetchHardwareTypes = async () => {
+    try {
+      setFetchingTypes(true);
+      const res = await api.get("/items");
+      setHardwareTypes(res.data.items || []);
+    } catch (error) {
+      console.error("Failed to fetch hardware types");
+    } finally {
+      setFetchingTypes(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchHardwareTypes();
@@ -23,18 +35,6 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
       }
     }
   }, [isOpen, request]);
-
-  const fetchHardwareTypes = async () => {
-    try {
-      setFetchingTypes(true);
-      const res = await api.get("/items");
-      setHardwareTypes(res.data.items || []);
-    } catch (error) {
-      console.error("Failed to fetch hardware types");
-    } finally {
-      setFetchingTypes(false);
-    }
-  };
 
   const updateItemQuantity = (index, newQty) => {
     const qty = Math.max(0, parseInt(newQty) || 0);

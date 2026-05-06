@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Users as UsersIcon,
@@ -13,10 +13,13 @@ import {
   UserPlus,
   X,
   Pencil,
+  Upload,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import Pagination from "../components/Pagination";
+import { exportUsersToExcel, importUsersFromExcel } from "../utils/exportUtils";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -42,6 +45,8 @@ const Users = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -234,6 +239,35 @@ const Users = () => {
     setIsEditModalOpen(true);
   };
 
+  const handleExportUsers = async () => {
+    try {
+      setIsExporting(true);
+      await exportUsersToExcel(api, "users_export");
+      toast.success("Users exported successfully");
+    } catch (error) {
+      toast.error("Failed to export users");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportUsers = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      const result = await importUsersFromExcel(file, api);
+      toast.success(`Imported ${result.success} of ${result.total} users`);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.message || "Failed to import users");
+    } finally {
+      setIsImporting(false);
+      e.target.value = "";
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -256,6 +290,27 @@ const Users = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportUsers}
+            disabled={isExporting}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--theme-panel)] text-[var(--theme-text)] text-sm font-medium rounded-xl hover:bg-[var(--theme-border)] transition-colors shadow-sm border border-[var(--theme-border)]"
+          >
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Export
+          </button>
+
+          <label className="flex items-center gap-2 px-4 py-2.5 bg-[var(--theme-panel)] text-[var(--theme-text)] text-sm font-medium rounded-xl hover:bg-[var(--theme-border)] transition-colors shadow-sm border border-[var(--theme-border)] cursor-pointer">
+            {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            Import
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleImportUsers}
+              disabled={isImporting}
+              className="hidden"
+            />
+          </label>
+
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-[#1C1C1E] text-white text-sm font-medium rounded-xl hover:bg-black transition-colors shadow-sm"

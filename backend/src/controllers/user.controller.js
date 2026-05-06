@@ -68,7 +68,7 @@ export const getUserById = async (req, res) => {
 
 export const manuallyAddUser = async (req, res) => {
   try {
-    const { fullname, instituteEmail, phoneNumber, role } = req.body;
+    const { fullname, instituteEmail, phoneNumber, role, studentId, branch, alternativeEmail, phdGuide } = req.body;
 
     if (!fullname || !instituteEmail || !phoneNumber || !role) {
       return res.status(400).json({ message: "All fields are required." });
@@ -80,8 +80,27 @@ export const manuallyAddUser = async (req, res) => {
     }
 
     const existingEmail = await User.findOne({ instituteEmail: instituteEmail.toLowerCase() });
+    
     if (existingEmail) {
-      return res.status(400).json({ message: "A user with this email already exists." });
+      existingEmail.fullname = fullname;
+      existingEmail.phoneNumber = phoneNumber;
+      existingEmail.role = role;
+      if (studentId !== undefined) existingEmail.studentId = studentId;
+      if (branch !== undefined) existingEmail.branch = branch;
+      if (alternativeEmail !== undefined) existingEmail.alternativeEmail = alternativeEmail;
+      if (phdGuide !== undefined) existingEmail.phdGuide = phdGuide;
+      await existingEmail.save();
+      
+      return res.status(200).json({
+        message: `User ${fullname} has been updated successfully.`,
+        user: {
+          _id: existingEmail._id,
+          fullname: existingEmail.fullname,
+          instituteEmail: existingEmail.instituteEmail,
+          role: existingEmail.role,
+          accountStatus: existingEmail.accountStatus,
+        },
+      });
     }
 
     const existingPhone = await User.findOne({ phoneNumber });
@@ -96,6 +115,10 @@ export const manuallyAddUser = async (req, res) => {
       role,
       accountStatus: "Approved",
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullname)}&background=random`,
+      studentId: studentId || "",
+      branch: branch || "",
+      alternativeEmail: alternativeEmail || "",
+      phdGuide: phdGuide || "",
     });
 
     res.status(201).json({

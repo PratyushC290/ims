@@ -72,6 +72,9 @@ export const getAllRequests = async (req, res) => {
         { "items.itemType": { $regex: search, $options: "i" } },
         { location: { $regex: search, $options: "i" } },
         { reason: { $regex: search, $options: "i" } },
+        { "user.fullname": { $regex: search, $options: "i" } },
+        { "user.instituteEmail": { $regex: search, $options: "i" } },
+        { "user.studentId": { $regex: search, $options: "i" } },
       ];
     }
 

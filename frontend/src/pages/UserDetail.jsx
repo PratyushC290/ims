@@ -8,7 +8,12 @@ import {
   MonitorSmartphone,
   Calendar,
   Loader2,
-  History as HistoryIcon
+  History as HistoryIcon,
+  User,
+  GraduationCap,
+  Building,
+  MailPlus,
+  BookOpen
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -103,10 +108,34 @@ const UserDetail = () => {
                 <Mail className="h-4 w-4 text-[var(--theme-text-muted)] opacity-70" />
                 <span className="text-[var(--theme-text-muted)]">{user.instituteEmail}</span>
               </div>
-              {user.phone && (
+              {user.phoneNumber && (
                 <div className="flex items-center gap-3 text-sm">
                   <Phone className="h-4 w-4 text-[var(--theme-text-muted)] opacity-70" />
-                  <span className="text-[var(--theme-text-muted)]">{user.phone}</span>
+                  <span className="text-[var(--theme-text-muted)]">{user.phoneNumber}</span>
+                </div>
+              )}
+              {user.studentId && (
+                <div className="flex items-center gap-3 text-sm">
+                  <GraduationCap className="h-4 w-4 text-[var(--theme-text-muted)] opacity-70" />
+                  <span className="text-[var(--theme-text-muted)]">{user.studentId}</span>
+                </div>
+              )}
+              {user.branch && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Building className="h-4 w-4 text-[var(--theme-text-muted)] opacity-70" />
+                  <span className="text-[var(--theme-text-muted)]">{user.branch}</span>
+                </div>
+              )}
+              {user.alternativeEmail && (
+                <div className="flex items-center gap-3 text-sm">
+                  <MailPlus className="h-4 w-4 text-[var(--theme-text-muted)] opacity-70" />
+                  <span className="text-[var(--theme-text-muted)]">{user.alternativeEmail}</span>
+                </div>
+              )}
+              {user.role === "Student" && user.phdGuide && (
+                <div className="flex items-center gap-3 text-sm">
+                  <BookOpen className="h-4 w-4 text-[var(--theme-text-muted)] opacity-70" />
+                  <span className="text-[var(--theme-text-muted)]">Guide: {user.phdGuide}</span>
                 </div>
               )}
             </div>

@@ -214,3 +214,93 @@ export const importAssignmentsFromExcel = async (file, api) => {
     reader.readAsArrayBuffer(file);
   });
 };
+
+export const exportUsersToExcel = async (api, filename = "users_export") => {
+  try {
+    const response = await api.get("/users?limit=1000");
+    const users = response.data.users || [];
+    
+    const formattedData = users.map(user => ({
+      "Full Name": user.fullname || "",
+      "Institute Email": user.instituteEmail || "",
+      "Phone Number": user.phoneNumber || "",
+      "Role": user.role || "",
+      "Student ID": user.studentId || "",
+      "Department/Branch": user.branch || "",
+      "Alternative Email": user.alternativeEmail || "",
+      "PhD Guide": user.phdGuide || "",
+      "Account Status": user.accountStatus || "",
+    }));
+    
+    exportToExcel(formattedData, filename, "Users");
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const importUsersFromExcel = async (file, api) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        
+        const users = jsonData.map(row => ({
+          fullname: row["Full Name"] || row.fullname || row.Name || "",
+          instituteEmail: row["Institute Email"] || row.instituteEmail || row.Email || row.email || "",
+          phoneNumber: row["Phone Number"] || row.phoneNumber || row.Phone || row.phone || "",
+          role: row.Role || row.role || "Student",
+          studentId: row["Student ID"] || row.studentId || row["Roll Number"] || "",
+          branch: row["Department/Branch"] || row.branch || row.Department || "",
+          alternativeEmail: row["Alternative Email"] || row.alternativeEmail || "",
+          phdGuide: row["PhD Guide"] || row.phdGuide || "",
+        })).filter(row => row.fullname && row.instituteEmail && row.phoneNumber);
+        
+        if (users.length === 0) {
+          reject(new Error("No valid users found in file. Required columns: Full Name, Institute Email, Phone Number"));
+          return;
+        }
+        
+        const results = [];
+        
+        for (const user of users) {
+          try {
+            const res = await api.post("/users/add", user);
+            results.push({
+              fullname: user.fullname,
+              instituteEmail: user.instituteEmail,
+              role: user.role,
+              status: res.data.user ? "success" : "failed",
+              message: res.data.message || "Success",
+            });
+          } catch (err) {
+            results.push({
+              fullname: user.fullname,
+              instituteEmail: user.instituteEmail,
+              role: user.role,
+              status: "failed",
+              message: err.response?.data?.message || err.message,
+            });
+          }
+        }
+        
+        const successCount = results.filter(r => r.status === "success").length;
+        
+        if (results.length > 0) {
+          exportToExcel(results, `import_results_${new Date().toISOString().split("T")[0]}`, "Import Results");
+        }
+        
+        resolve({ total: users.length, success: successCount, failed: users.length - successCount, results });
+      } catch (err) {
+        reject(err);
+      }
+    };
+    
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsArrayBuffer(file);
+  });
+};
