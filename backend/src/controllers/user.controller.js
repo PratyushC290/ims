@@ -138,3 +138,37 @@ export const getUserHistory = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { fullname, instituteEmail, phoneNumber, role, accountStatus } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (fullname) user.fullname = fullname;
+    if (instituteEmail) user.instituteEmail = instituteEmail.toLowerCase();
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (role) user.role = role;
+    if (accountStatus) user.accountStatus = accountStatus;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "User updated successfully.",
+      user: {
+        _id: user._id,
+        fullname: user.fullname,
+        instituteEmail: user.instituteEmail,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        accountStatus: user.accountStatus,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

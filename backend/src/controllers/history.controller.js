@@ -55,7 +55,7 @@ export const getGlobalAuditLog = async (req, res) => {
     const [logs, totalLogs] = await Promise.all([
       History.find(query)
         .populate("item", "name identifier category")
-        .populate("targetUser", "fullname role")
+        .populate("targetUser", "fullname instituteEmail branch studentId role")
         .populate("authorizedBy", "fullname")
         .sort({ createdAt: -1 })
         .skip(skip)

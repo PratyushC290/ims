@@ -41,9 +41,16 @@ const IssuedItems = () => {
     );
   });
 
-  const handleReturn = async (issuedAssetId) => {
+  const handleReturn = async (asset) => {
+    const itemName = asset.catalogItem?.name || "Unknown Item";
+    const identifier = asset.identifier || "N/A";
+    
+    if (!window.confirm(`Return ${itemName} (${identifier})?`)) {
+      return;
+    }
+
     try {
-      await api.put(`/items/return/${issuedAssetId}`);
+      await api.put(`/items/return/${asset._id}`);
       toast.success("Item returned successfully");
       fetchIssuedAssets();
     } catch (error) {
@@ -203,7 +210,7 @@ const IssuedItems = () => {
                         </button>
                         {asset.status === "Issued" && (
                           <button
-                            onClick={() => handleReturn(asset._id)}
+                            onClick={() => handleReturn(asset)}
                             className="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"
                             title="Return Item"
                           >

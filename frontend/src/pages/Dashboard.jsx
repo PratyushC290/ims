@@ -113,7 +113,7 @@ const Dashboard = () => {
       </div>
 
       {/* Top Row: Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {topMetrics.map((metric, index) => {
           const Icon = metric.icon;
           return (

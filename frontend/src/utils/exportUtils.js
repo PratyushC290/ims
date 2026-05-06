@@ -5,6 +5,36 @@ export const exportToExcel = (data, filename, sheetName = "Sheet1") => {
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+  // Style header row (first row) - make it bold
+  if (ws['!ref']) {
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const headerRow = range.s.r;
+    
+    // Apply bold style to header cells
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: headerRow, c: col });
+      if (ws[cellRef]) {
+        ws[cellRef].s = { font: { bold: true } };
+      }
+    }
+    
+    // Auto-fit column widths
+    const colWidths = [];
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      let maxWidth = 10;
+      for (let row = range.s.r; row <= range.e.r; row++) {
+        const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+        if (ws[cellRef] && ws[cellRef].v) {
+          const cellLen = String(ws[cellRef].v).length;
+          if (cellLen > maxWidth) maxWidth = cellLen;
+        }
+      }
+      colWidths.push({ wch: maxWidth + 2 });
+    }
+    ws['!cols'] = colWidths;
+  }
+
   const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   saveAs(blob, `${filename}_${new Date().toISOString().split("T")[0]}.xlsx`);
@@ -22,9 +52,10 @@ export const exportAuditLogs = async (api, filename = "audit_logs", filters = {}
     const formattedData = logs.map(log => ({
       Action: log.action || "",
       Item: log.item?.name || "Unknown",
-      ItemID: log.item?.identifier || "",
+      ItemID: log.notes ? log.notes.split(" - ")[0].split(" - ")[0].trim() : "",
       User: log.targetUser?.fullname || "",
       UserEmail: log.targetUser?.instituteEmail || "",
+      Department: log.targetUser?.branch || "",
       AuthorizedBy: log.authorizedBy?.fullname || "System",
       Date: log.createdAt ? new Date(log.createdAt).toLocaleString() : "",
       Notes: log.notes || "",

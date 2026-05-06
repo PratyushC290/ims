@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Package, User, CheckCircle, XCircle, Printer, Loader2, FileText, RotateCcw, ArrowLeft } from "lucide-react";
+import { Search, Package, User, CheckCircle, XCircle, Printer, Loader2, RotateCcw, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 
@@ -12,10 +12,6 @@ const NoDues = () => {
   const [searching, setSearching] = useState(false);
   const [returning, setReturning] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -27,6 +23,10 @@ const NoDues = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const filteredUsers = allUsers.filter(u => 
     u.role === "Student" && (
@@ -80,24 +80,24 @@ const NoDues = () => {
     window.print();
   };
 
-  const getPrintStyles = () => (
-    <style>{`
-      @media print {
-        .no-print { display: none !important; }
-        .print-only { display: block !important; }
-        body { background: white !important; }
-        .print-container { 
-          padding: 40px; 
-          max-width: 800px; 
-          margin: 0 auto;
-        }
-      }
-    `}</style>
-  );
-
   return (
     <div className="max-w-2xl mx-auto">
-      {getPrintStyles()}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          .print-area, .print-area * { visibility: visible; }
+          .print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+            background: white;
+          }
+          .no-print { display: none !important; }
+        }
+      `}</style>
       
       <div className="mb-8 no-print">
         <h1 className="text-2xl font-bold text-[var(--theme-text)]">No Dues Certificate</h1>
@@ -156,7 +156,7 @@ const NoDues = () => {
           <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-accent)]" />
         </div>
       ) : (
-        <div className="print-container">
+        <div>
           <button
             onClick={() => setStudent(null)}
             className="flex items-center gap-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] mb-4 no-print"
@@ -164,107 +164,128 @@ const NoDues = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to list
           </button>
-          <div className="bg-[var(--theme-panel)] rounded-3xl border border-[var(--theme-border)] overflow-hidden">
-            <div className="p-8 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-blue-600/20 flex items-center justify-center">
-                  <User className="h-8 w-8 text-blue-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-[var(--theme-text)]">{student.fullname}</h2>
-                  <p className="text-[var(--theme-text-muted)]">{student.instituteEmail}</p>
-                  <p className="text-sm text-[var(--theme-text-muted)]">Role: {student.role}</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="p-8">
-              {items.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="w-20 h-20 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-10 w-10 text-green-500" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-green-500 mb-2">CLEAR - NO DUES</h3>
-                  <p className="text-[var(--theme-text-muted)] mb-6">
-                    This student has no pending items to return.
+          {items.length === 0 ? (
+            <div className="print-area bg-white p-4">
+              <div className="border-2 border-black rounded-lg p-8 md:p-12 max-w-[210mm] mx-auto">
+                <div className="text-center border-b-2 border-black pb-6 mb-6">
+                  <h2 className="text-2xl font-bold text-black uppercase tracking-wide">
+                    Inventory Management System
+                  </h2>
+                  <h3 className="text-lg font-semibold text-black mt-1">
+                    No Dues Certificate
+                  </h3>
+                </div>
+
+                <div className="mb-8">
+                  <p className="text-black text-sm text-right mb-4">
+                    Date: {new Date().toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
                   </p>
-                  <div className="flex items-center justify-center gap-3">
-                    <button
-                      onClick={printCertificate}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors no-print"
-                    >
-                      <Printer className="h-5 w-5" />
-                      Print Certificate
-                    </button>
-                    <button
-                      onClick={handleVerifyAndSave}
-                      disabled={returning === "verifying"}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 no-print"
-                    >
-                      {returning === "verifying" ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        <CheckCircle className="h-5 w-5" />
-                      )}
-                      Verify & Save
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <XCircle className="h-6 w-6 text-red-500" />
-                    <h3 className="text-xl font-bold text-red-500">
-                      {items.length} Item{items.length !== 1 ? 's' : ''} Pending Return
-                    </h3>
-                  </div>
                   
-                  <div className="space-y-3">
-                    {items.map(item => (
-                      <div
-                        key={item._id}
-                        className="flex items-center justify-between p-4 bg-red-500/10 rounded-xl border border-red-500/20"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Package className="h-5 w-5 text-red-400" />
-                          <div>
-                            <p className="font-medium text-[var(--theme-text)]">{item.catalogItem?.name || "Unknown Item"}</p>
-                            <p className="text-sm text-[var(--theme-text-muted)]">{item.identifier}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
-                            {item.status}
-                          </span>
-                          <button
-                            onClick={() => handleReturnItem(item)}
-                            disabled={returning === item._id}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 disabled:opacity-50"
-                          >
-                            {returning === item._id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <RotateCcw className="h-3 w-3" />
-                            )}
-                            Return
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="mb-4">
+                    <p className="text-black mb-1"><span className="font-semibold">Name:</span> {student.fullname}</p>
+                    <p className="text-black mb-1"><span className="font-semibold">Roll Number:</span> {student.studentId || "N/A"}</p>
+                    <p className="text-black mb-1"><span className="font-semibold">Institute Email:</span> {student.instituteEmail}</p>
+                    <p className="text-black mb-1"><span className="font-semibold">Department:</span> {student.branch || student.role || "N/A"}</p>
                   </div>
                 </div>
-              )}
-            </div>
 
-            <div className="px-8 py-4 bg-[var(--theme-bg)] border-t border-[var(--theme-border)] flex items-center justify-between print-only hidden">
-              <div className="text-sm text-gray-500">
-                Generated on {new Date().toLocaleDateString()}
-              </div>
-              <div className="text-sm text-gray-500">
-                IMS - Inventory Management System
+                <div className="mb-8">
+                  <p className="text-black leading-relaxed text-justify">
+                    This is to certify that <span className="font-semibold">{student.fullname}</span> has returned all issued hardware 
+                    and has no pending dues towards the department. All items assigned to this student have been properly 
+                    accounted for and returned in good condition.
+                  </p>
+                </div>
+
+                <div className="flex justify-between pt-8">
+                  <div className="text-center">
+                    <div className="w-48 border-b-2 border-black mb-2"></div>
+                    <p className="text-black text-sm font-semibold">Signature of Student</p>
+                    <p className="text-black text-xs">Date: ________________</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-48 border-b-2 border-black mb-2"></div>
+                    <p className="text-black text-sm font-semibold">Verified By</p>
+                    <p className="text-black text-xs">Date: ________________</p>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-gray-300">
+                  <p className="text-gray-500 text-xs text-center">
+                    IMS - Inventory Management System | Generated on {new Date().toLocaleDateString()}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <XCircle className="h-6 w-6 text-red-500" />
+                <h3 className="text-xl font-bold text-red-500">
+                  {items.length} Item{items.length !== 1 ? 's' : ''} Pending Return
+                </h3>
+              </div>
+                    
+              <div className="space-y-3">
+                {items.map(item => (
+                  <div
+                    key={item._id}
+                    className="flex items-center justify-between p-4 bg-red-500/10 rounded-xl border border-red-500/20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Package className="h-5 w-5 text-red-400" />
+                      <div>
+                        <p className="font-medium text-[var(--theme-text)]">{item.catalogItem?.name || "Unknown Item"}</p>
+                        <p className="text-sm text-[var(--theme-text-muted)]">{item.identifier}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
+                        {item.status}
+                      </span>
+                      <button
+                        onClick={() => handleReturnItem(item)}
+                        disabled={returning === item._id}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {returning === item._id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-3 w-3" />
+                        )}
+                        Return
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {items.length === 0 && (
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 no-print">
+              <button
+                onClick={printCertificate}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
+              >
+                <Printer className="h-5 w-5" />
+                Print Certificate
+              </button>
+              <button
+                onClick={handleVerifyAndSave}
+                disabled={returning === "verifying"}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {returning === "verifying" ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-5 w-5" />
+                )}
+                Verify & Save
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

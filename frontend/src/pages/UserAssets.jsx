@@ -10,6 +10,7 @@ const UserAssets = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
+  const [showUsersWithItems, setShowUsersWithItems] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userHistory, setUserHistory] = useState([]);
@@ -67,7 +68,10 @@ const UserAssets = () => {
     const matchesSearch = !searchTerm || 
       user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.instituteEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesRole && matchesSearch;
+    const userItems = userIssuedMap[user._id] || [];
+    const hasItems = userItems.length > 0;
+    const matchesItemsFilter = !showUsersWithItems || hasItems;
+    return matchesRole && matchesSearch && matchesItemsFilter;
   });
 
   const handleExport = () => {
@@ -161,6 +165,21 @@ const UserAssets = () => {
               <option key={role} value={role}>{role === "All" ? "All Roles" : role}</option>
             ))}
           </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={showUsersWithItems}
+                onChange={(e) => setShowUsersWithItems(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-[var(--theme-border)] rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
+              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+            </div>
+            <span className="text-sm text-[var(--theme-text)]">With items only</span>
+          </label>
         </div>
       </div>
 

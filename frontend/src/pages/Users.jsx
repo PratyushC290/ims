@@ -12,6 +12,7 @@ import {
   Search,
   UserPlus,
   X,
+  Pencil,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -34,6 +35,9 @@ const Users = () => {
   const [limit, setLimit] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -143,6 +147,45 @@ const Users = () => {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleEditUser = async (e) => {
+    e.preventDefault();
+    if (!editUser.fullname || !editUser.instituteEmail || !editUser.phoneNumber || !editUser.role) {
+      toast.error("All fields are required.");
+      return;
+    }
+
+    try {
+      setIsEditing(true);
+      await api.put(`/users/${editUser._id}`, {
+        fullname: editUser.fullname,
+        instituteEmail: editUser.instituteEmail,
+        phoneNumber: editUser.phoneNumber,
+        role: editUser.role,
+        accountStatus: editUser.accountStatus,
+      });
+      toast.success(`User ${editUser.fullname} has been updated successfully.`);
+      setIsEditModalOpen(false);
+      setEditUser(null);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update user.");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const openEditModal = (user) => {
+    setEditUser({
+      _id: user._id,
+      fullname: user.fullname,
+      instituteEmail: user.instituteEmail,
+      phoneNumber: user.phoneNumber || "",
+      role: user.role,
+      accountStatus: user.accountStatus,
+    });
+    setIsEditModalOpen(true);
   };
 
   if (loading) {
@@ -304,6 +347,12 @@ const Users = () => {
                   {currentUserRole === "Super Admin" && (
                     <td className="py-4 px-6">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="text-sm text-blue-500 hover:text-blue-400 font-medium transition-colors bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg border border-blue-500/20"
+                        >
+                          Edit
+                        </button>
                         {user.accountStatus === "Pending" ? (
                           <>
                             <button
@@ -437,6 +486,118 @@ const Users = () => {
                   className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50"
                 >
                   {isCreating ? "Creating..." : "Create User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && editUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-[var(--theme-panel)] rounded-4xl shadow-2xl max-w-lg w-full p-8 border border-[var(--theme-border)] relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => setIsEditModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] bg-[var(--theme-bg)] rounded-full transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mb-6">
+              <div className="h-12 w-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mb-4 border border-blue-500/20">
+                <Pencil className="h-6 w-6" />
+              </div>
+              <h2 className="text-xl font-bold text-[var(--theme-text)]">Edit User</h2>
+              <p className="text-sm text-[var(--theme-text-muted)] mt-1">
+                Update user details. All fields are editable.
+              </p>
+            </div>
+
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="John Doe"
+                  value={editUser.fullname}
+                  onChange={(e) => setEditUser({ ...editUser, fullname: e.target.value })}
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                  Institute Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="john.doe@institute.edu"
+                  value={editUser.instituteEmail}
+                  onChange={(e) => setEditUser({ ...editUser, instituteEmail: e.target.value })}
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="+1 234 567 8900"
+                  value={editUser.phoneNumber}
+                  onChange={(e) => setEditUser({ ...editUser, phoneNumber: e.target.value })}
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                  Role
+                </label>
+                <select
+                  value={editUser.role}
+                  onChange={(e) => setEditUser({ ...editUser, role: e.target.value })}
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                >
+                  <option value="Student">Student</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Faculty">Faculty</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Super Admin">Super Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                  Account Status
+                </label>
+                <select
+                  value={editUser.accountStatus}
+                  onChange={(e) => setEditUser({ ...editUser, accountStatus: e.target.value })}
+                  className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                >
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Deactivated">Deactivated</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-[var(--theme-text)] bg-[var(--theme-bg)] border border-[var(--theme-border)] hover:bg-[var(--theme-border)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditing}
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50"
+                >
+                  {isEditing ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
