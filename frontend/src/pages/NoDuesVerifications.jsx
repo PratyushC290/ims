@@ -1,28 +1,15 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDebounce } from "../hooks/useDebounce";
-import {
-  Search,
-  Loader2,
-  Download,
-  FileText,
-  User,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  Trash2,
-} from "lucide-react";
+import { Search, Loader2, Download, FileText, User, Calendar, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
-import Pagination from "../components/Pagination";
 import { exportToExcel } from "../utils/exportUtils";
 
 const NoDuesVerifications = () => {
   const [verifications, setVerifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [pagination, setPagination] = useState(null);
-  const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -30,72 +17,81 @@ const NoDuesVerifications = () => {
   const debouncedFromDate = useDebounce(fromDate, 300);
   const debouncedToDate = useDebounce(toDate, 300);
 
-  const fetchVerifications = useCallback(
-    async (fetchPage = 1) => {
-      setLoading(true);
-      try {
-        let url = `/no-dues/verifications?page=${fetchPage}&limit=20`;
-        if (debouncedSearch) url += `&search=${debouncedSearch}`;
-        if (debouncedFromDate) url += `&fromDate=${debouncedFromDate}`;
-        if (debouncedToDate) url += `&toDate=${debouncedToDate}`;
-
-        const res = await api.get(url);
-        setVerifications(res.data.verifications || []);
-        setPagination(res.data.pagination);
-      } catch (error) {
-        toast.error("Failed to load verifications");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [debouncedSearch, debouncedFromDate, debouncedToDate]
-  );
+  // Fetch all data once on load
+  const fetchVerifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/no-dues/verifications?limit=5000");
+      setVerifications(res.data.verifications || []);
+    } catch (error) {
+      toast.error("Failed to load verifications");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchVerifications(1);
-  }, [debouncedSearch, debouncedFromDate, debouncedToDate]);
+    fetchVerifications();
+  }, [fetchVerifications]);
 
-  const applyFilters = () => {
-    setPage(1);
-    fetchVerifications(1);
-  };
+  // Client-side filter
+  const filteredVerifications = useMemo(() => {
+    return verifications.filter((v) => {
+      const studentName = v.student?.fullname?.toLowerCase() || "";
+      const studentEmail = v.student?.instituteEmail?.toLowerCase() || "";
+      const searchLower = debouncedSearch.toLowerCase();
+      const matchesSearch = !debouncedSearch || 
+        studentName.includes(searchLower) || 
+        studentEmail.includes(searchLower);
+
+      let matchesFromDate = true;
+      let matchesToDate = true;
+
+      if (debouncedFromDate && v.createdAt) {
+        const vDate = new Date(v.createdAt);
+        const from = new Date(debouncedFromDate);
+        from.setHours(0, 0, 0, 0);
+        matchesFromDate = vDate >= from;
+      }
+
+      if (debouncedToDate && v.createdAt) {
+        const vDate = new Date(v.createdAt);
+        const to = new Date(debouncedToDate);
+        to.setHours(23, 59, 59, 999);
+        matchesToDate = vDate <= to;
+      }
+
+      return matchesSearch && matchesFromDate && matchesToDate;
+    });
+  }, [verifications, debouncedSearch, debouncedFromDate, debouncedToDate]);
+
+  const applyFilters = () => {}; // No-op since filtering is automatic
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this verification?")) return;
     try {
       await api.delete(`/no-dues/verification/${id}`);
       toast.success("Deleted");
-      fetchVerifications(page);
+      fetchVerifications();
     } catch (error) {
       toast.error("Delete failed");
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
     setExporting(true);
     try {
-      const url = `/no-dues/verifications?limit=1000${searchTerm ? `&search=${searchTerm}` : ""
-        }${fromDate ? `&fromDate=${fromDate}` : ""}${toDate ? `&toDate=${toDate}` : ""
-        }`;
-
-      const res = await api.get(url);
-      const data = res.data.verifications || [];
-
-      const formattedData = data.map((v) => ({
-        Date: v.createdAt
-          ? new Date(v.createdAt).toLocaleString()
-          : "N/A",
+      const data = filteredVerifications.map((v) => ({
+        Date: v.createdAt ? new Date(v.createdAt).toLocaleString() : "N/A",
         "Student Name": v.student?.fullname || "Unknown",
         "Student Email": v.student?.instituteEmail || "N/A",
         Status: v.status,
         "Pending Items": v.pendingCount || 0,
         "Verified By": v.verifiedBy?.fullname || "Unknown",
-        Items:
-          v.itemsAtVerification?.map((i) => `${i.itemName} (${i.identifier})`)
-            .join(", ") || "None",
+        Items: v.itemsAtVerification?.map((i) => `${i.itemName} (${i.identifier})`).join(", ") || "None",
       }));
 
-      exportToExcel(formattedData, "no_dues_verifications", "Verifications");
+      exportToExcel(data, "no_dues_verifications", "Verifications");
       toast.success("Exported successfully!");
     } catch (error) {
       toast.error("Export failed");
@@ -212,7 +208,7 @@ const NoDuesVerifications = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--theme-border)]">
-              {verifications.length === 0 ? (
+              {filteredVerifications.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
@@ -222,7 +218,7 @@ const NoDuesVerifications = () => {
                   </td>
                 </tr>
               ) : (
-                verifications.map((v) => (
+                filteredVerifications.map((v) => (
                   <tr
                     key={v._id}
                     className="hover:bg-[var(--theme-bg)] transition-colors"
@@ -277,11 +273,9 @@ const NoDuesVerifications = () => {
           </table>
         </div>
 
-        <Pagination
-          pagination={pagination}
-          onPageChange={setPage}
-          loading={loading}
-        />
+        <div className="px-6 py-4 border-t border-[var(--theme-border)] text-sm text-[var(--theme-text-muted)]">
+          Showing {filteredVerifications.length} of {verifications.length} records
+        </div>
       </div>
     </div>
   );

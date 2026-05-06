@@ -3,7 +3,12 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-r
 const Pagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
   if (!pagination || !pagination.totalPages) return null;
 
-  const { totalPages = 1, currentPage = 1, totalItems = 0, itemsPerPage = 20 } = pagination;
+  const { 
+    totalPages = 1, 
+    currentPage = 1, 
+    totalItems = pagination.totalUsers || pagination.totalItems || 0, 
+    itemsPerPage = 20 
+  } = pagination;
 
   if (totalPages <= 1 && totalItems <= itemsPerPage) return null;
 
