@@ -71,11 +71,9 @@ const NoDuesVerifications = () => {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const url = `/no-dues/verifications?limit=1000${
-        searchTerm ? `&search=${searchTerm}` : ""
-      }${fromDate ? `&fromDate=${fromDate}` : ""}${
-        toDate ? `&toDate=${toDate}` : ""
-      }`;
+      const url = `/no-dues/verifications?limit=1000${searchTerm ? `&search=${searchTerm}` : ""
+        }${fromDate ? `&fromDate=${fromDate}` : ""}${toDate ? `&toDate=${toDate}` : ""
+        }`;
 
       const res = await api.get(url);
       const data = res.data.verifications || [];
@@ -128,7 +126,7 @@ const NoDuesVerifications = () => {
         <div>
           <h1 className="text-2xl font-bold text-[var(--theme-text)] tracking-tight flex items-center gap-2">
             <FileText className="h-6 w-6" />
-            No Dues Verifications
+            No Dues Records
           </h1>
           <p className="text-sm text-[var(--theme-text-muted)] mt-1">
             View and export all no dues verification records.
@@ -239,11 +237,10 @@ const NoDuesVerifications = () => {
                     </td>
                     <td className="py-4 px-6">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
-                          v.status === "Cleared"
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium border ${v.status === "Cleared"
                             ? "bg-green-500/10 text-green-500 border-green-500/20"
                             : "bg-red-500/10 text-red-500 border-red-500/20"
-                        }`}
+                          }`}
                       >
                         {v.status}
                       </span>
