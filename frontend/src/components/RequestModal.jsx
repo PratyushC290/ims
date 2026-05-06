@@ -67,7 +67,7 @@ const RequestModal = ({ isOpen, onClose, onSuccess }) => {
         onClick={onClose}
       />
       
-      <div className="relative bg-[var(--theme-panel)] rounded-3xl shadow-2xl max-w-md w-full p-6 border border-[var(--theme-border)] animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-[var(--theme-panel)] rounded-3xl shadow-2xl max-w-xl w-full p-6 border border-[var(--theme-border)] animate-in fade-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-xl text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-bg)] transition-colors"

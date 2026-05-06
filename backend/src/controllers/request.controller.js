@@ -43,6 +43,7 @@ export const getMyRequests = async (req, res) => {
     const userId = req.user.userId;
 
     const requests = await Request.find({ user: userId })
+      .populate("user", "fullname instituteEmail role studentId branch phoneNumber alternativeEmail phdGuide")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ requests });
@@ -78,7 +79,7 @@ export const getAllRequests = async (req, res) => {
 
     const [requests, total] = await Promise.all([
       Request.find(query)
-        .populate("user", "fullname instituteEmail role")
+        .populate("user", "fullname instituteEmail role studentId branch phoneNumber alternativeEmail phdGuide")
         .sort({ createdAt: 1 })
         .skip(skip)
         .limit(parseInt(limit))

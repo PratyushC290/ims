@@ -349,7 +349,7 @@ const Users = () => {
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-[var(--theme-panel)] rounded-4xl shadow-2xl max-w-md w-full p-8 border border-[var(--theme-border)] relative animate-in fade-in zoom-in duration-200">
+          <div className="bg-[var(--theme-panel)] rounded-4xl shadow-2xl max-w-lg w-full p-8 border border-[var(--theme-border)] relative animate-in fade-in zoom-in duration-200">
             <button
               onClick={() => setIsAddModalOpen(false)}
               className="absolute top-6 right-6 p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] bg-[var(--theme-bg)] rounded-full transition-colors"

@@ -3,6 +3,7 @@ import { Package, Clock, CheckCircle, XCircle, Plus, MonitorSmartphone, Cpu, Cab
 import toast from "react-hot-toast";
 import api from "../api";
 import RequestModal from "../components/RequestModal";
+import PrintableRequest from "../components/PrintableRequest";
 
 const StudentPortal = () => {
   const [issuedItems, setIssuedItems] = useState([]);
@@ -10,6 +11,7 @@ const StudentPortal = () => {
   const [loading, setLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [userProfile, setUserProfile] = useState({});
+  const [requestToPrint, setRequestToPrint] = useState(null);
 
   useEffect(() => {
     getCurrentUserId();
@@ -83,6 +85,10 @@ const StudentPortal = () => {
         onClose={() => setShowRequestModal(false)}
         onSuccess={handleRequestSubmitted}
       />
+
+      <div id="print-root" className="hidden print:block absolute top-0 left-0 w-full min-h-screen bg-white z-[9999]">
+        <PrintableRequest request={requestToPrint} />
+      </div>
 
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -214,15 +220,26 @@ const StudentPortal = () => {
                         {request.status}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--theme-text-muted)] opacity-70">
-                      {new Date(request.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                    <div className="flex justify-between items-center mt-2">
+                      <p className="text-xs text-[var(--theme-text-muted)] opacity-70">
+                        {new Date(request.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setRequestToPrint(request);
+                          setTimeout(() => window.print(), 100);
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
+                      >
+                        Print Document
+                      </button>
+                    </div>
                   </div>
                 );
               })}

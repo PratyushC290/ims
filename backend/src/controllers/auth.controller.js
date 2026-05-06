@@ -6,10 +6,10 @@ import { Otp } from "../models/OTP.js";
 
 export const signupStudent = async (req, res) => {
   try {
-    const { fullname, instituteEmail, phoneNumber } = req.body;
+    const { fullname, instituteEmail, phoneNumber, studentId, branch, alternativeEmail, phdGuide } = req.body;
 
-    if (!fullname || !instituteEmail || !phoneNumber) {
-      return res.status(400).json({ message: "All fields are required." });
+    if (!fullname || !instituteEmail || !phoneNumber || !studentId || !branch) {
+      return res.status(400).json({ message: "All mandatory fields are required." });
     }
 
     let existingUser = await User.findOne({ instituteEmail });
@@ -53,10 +53,10 @@ export const signupStudent = async (req, res) => {
 
 export const verifyStudentSignup = async (req, res) => {
   try {
-    const { fullname, instituteEmail, phoneNumber, otpCode } = req.body;
+    const { fullname, instituteEmail, phoneNumber, otpCode, studentId, branch, alternativeEmail, phdGuide } = req.body;
 
-    if (!fullname || !instituteEmail || !phoneNumber || !otpCode) {
-      return res.status(400).json({ message: "All fields are required." });
+    if (!fullname || !instituteEmail || !phoneNumber || !otpCode || !studentId || !branch) {
+      return res.status(400).json({ message: "All mandatory fields are required." });
     }
 
     const validOtp = await Otp.findOne({ email: instituteEmail });
@@ -91,6 +91,10 @@ export const verifyStudentSignup = async (req, res) => {
       fullname,
       instituteEmail,
       phoneNumber,
+      studentId,
+      branch,
+      alternativeEmail,
+      phdGuide,
       role: "Student",
       accountStatus: "Approved",
       avatar: "https://default-avatar-url.com/image.png",

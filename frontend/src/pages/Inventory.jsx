@@ -400,7 +400,7 @@ const Inventory = () => {
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-sm w-full p-6 relative border border-[var(--theme-border)]">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-lg w-full p-6 relative border border-[var(--theme-border)]">
             <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
               <X className="h-4 w-4" />
             </button>
@@ -482,7 +482,7 @@ const Inventory = () => {
 
       {isAssignModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-lg w-full p-6 relative border border-[var(--theme-border)] max-h-[85vh] overflow-y-auto">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-2xl w-full p-6 relative border border-[var(--theme-border)] max-h-[85vh] overflow-y-auto">
             <button onClick={() => setIsAssignModalOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
               <X className="h-4 w-4" />
             </button>
@@ -658,7 +658,7 @@ const Inventory = () => {
 
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-md w-full p-6 relative border border-[var(--theme-border)]">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-lg w-full p-6 relative border border-[var(--theme-border)]">
             <button onClick={() => setIsEditModalOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
               <X className="h-4 w-4" />
             </button>

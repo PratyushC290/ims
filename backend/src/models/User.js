@@ -34,6 +34,23 @@ const userSchema = new Schema(
       enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
     },
+    studentId: {
+      type: String,
+      trim: true,
+    },
+    branch: {
+      type: String,
+      trim: true,
+    },
+    alternativeEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+    phdGuide: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,

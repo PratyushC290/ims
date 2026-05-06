@@ -3,6 +3,7 @@ import { Search, Clock, CheckCircle, XCircle, FileText, Filter, Loader2, Package
 import toast from "react-hot-toast";
 import api from "../api";
 import FulfillModal from "../components/FulfillModal";
+import PrintableRequest from "../components/PrintableRequest";
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -14,6 +15,7 @@ const Requests = () => {
   const [showRejectModal, setShowRejectModal] = useState({ isOpen: false, requestId: null });
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
+  const [requestToPrint, setRequestToPrint] = useState(null);
 
   useEffect(() => {
     fetchRequests();
@@ -76,6 +78,10 @@ const Requests = () => {
 
   return (
     <div>
+      <div id="print-root" className="hidden print:block absolute top-0 left-0 w-full min-h-screen bg-white z-[9999]">
+        <PrintableRequest request={requestToPrint} />
+      </div>
+
       <FulfillModal
         isOpen={showFulfillModal}
         onClose={() => {
@@ -193,9 +199,7 @@ const Requests = () => {
                   <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Reason</th>
                   <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Date</th>
                   <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)]">Status</th>
-                  {activeTab === "pending" && (
-                    <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)] text-right">Actions</th>
-                  )}
+                  <th className="px-6 py-4 text-sm font-semibold text-[var(--theme-text-muted)] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--theme-border)]">
@@ -259,25 +263,37 @@ const Requests = () => {
                         {request.status}
                       </span>
                     </td>
-                    {activeTab === "pending" && (
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenReject(request._id)}
-                            className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg font-medium hover:bg-red-500/20 transition-colors text-sm"
-                          >
-                            Reject
-                          </button>
-                          <button
-                            onClick={() => handleFulfill(request)}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-sm flex items-center gap-1.5"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                            Fulfill
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setRequestToPrint(request);
+                            setTimeout(() => window.print(), 100);
+                          }}
+                          className="px-3 py-1.5 border border-[var(--theme-border)] text-[var(--theme-text)] rounded-lg font-medium hover:bg-[var(--theme-bg)] transition-colors text-xs flex items-center gap-1.5"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Print
+                        </button>
+                        {activeTab === "pending" && (
+                          <>
+                            <button
+                              onClick={() => handleOpenReject(request._id)}
+                              className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg font-medium hover:bg-red-500/20 transition-colors text-sm"
+                            >
+                              Reject
+                            </button>
+                            <button
+                              onClick={() => handleFulfill(request)}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-sm flex items-center gap-1.5"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Fulfill
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

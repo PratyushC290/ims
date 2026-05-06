@@ -9,6 +9,10 @@ const StudentRegister = () => {
     fullname: "",
     instituteEmail: "",
     phoneNumber: "",
+    studentId: "",
+    branch: "",
+    alternativeEmail: "",
+    phdGuide: "",
     otpCode: "",
   });
   const [step, setStep] = useState(1);
@@ -17,8 +21,8 @@ const StudentRegister = () => {
 
   const handleRequestOtp = async (e) => {
     e.preventDefault();
-    if (!formData.fullname || !formData.instituteEmail || !formData.phoneNumber) {
-      return toast.error("Please fill in all fields");
+    if (!formData.fullname || !formData.instituteEmail || !formData.phoneNumber || !formData.studentId || !formData.branch) {
+      return toast.error("Please fill in all mandatory fields");
     }
     setLoading(true);
 
@@ -76,7 +80,7 @@ const StudentRegister = () => {
           <form onSubmit={handleRequestOtp} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
+                Full Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -97,7 +101,7 @@ const StudentRegister = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Institute Email
+                Institute Email <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -118,7 +122,7 @@ const StudentRegister = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                Phone Number <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -133,6 +137,76 @@ const StudentRegister = () => {
                   placeholder="+91 9876543210"
                   className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
                   required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Student ID <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.studentId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, studentId: e.target.value })
+                  }
+                  placeholder="Enter Student ID"
+                  className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Branch/Department <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.branch}
+                  onChange={(e) =>
+                    setFormData({ ...formData, branch: e.target.value })
+                  }
+                  placeholder="e.g. Computer Science"
+                  className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Alternative Email-ID <span className="text-gray-400 text-xs">(Optional)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={formData.alternativeEmail}
+                  onChange={(e) =>
+                    setFormData({ ...formData, alternativeEmail: e.target.value })
+                  }
+                  placeholder="alternative@example.com"
+                  className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                PhD Guide Name <span className="text-gray-400 text-xs">(Optional)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.phdGuide}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phdGuide: e.target.value })
+                  }
+                  placeholder="e.g. Dr. John Doe"
+                  className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
                 />
               </div>
             </div>
