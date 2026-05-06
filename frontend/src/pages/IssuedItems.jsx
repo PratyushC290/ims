@@ -37,7 +37,9 @@ const IssuedItems = () => {
     return (
       asset.catalogItem?.name?.toLowerCase().includes(term) ||
       asset.identifier?.toLowerCase().includes(term) ||
-      asset.user?.fullname?.toLowerCase().includes(term)
+      asset.user?.fullname?.toLowerCase().includes(term) ||
+      asset.user?.studentId?.toLowerCase().includes(term) ||
+      asset.user?.instituteEmail?.toLowerCase().includes(term)
     );
   });
 
@@ -180,6 +182,9 @@ const IssuedItems = () => {
                     <td className="py-4 px-6">
                       <div className="text-[var(--theme-text)]">
                         {asset.user?.fullname || "Unknown"}
+                      </div>
+                      <div className="text-xs text-[var(--theme-text-muted)]">
+                        {asset.user?.instituteEmail || "No email"}
                       </div>
                       {asset.user?.role && (
                         <div className="text-xs text-[var(--theme-text-muted)]">
