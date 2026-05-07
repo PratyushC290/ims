@@ -12,6 +12,7 @@ const NoDues = () => {
   const [searching, setSearching] = useState(false);
   const [returning, setReturning] = useState(null);
   const [recentlyReturnedItems, setRecentlyReturnedItems] = useState([]);
+  const [adminName, setAdminName] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -27,6 +28,15 @@ const NoDues = () => {
 
   useEffect(() => {
     fetchUsers();
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setAdminName(payload.name || payload.fullname || "Admin");
+      }
+    } catch (e) {
+      console.error("Failed to decode token", e);
+    }
   }, []);
 
   const filteredUsers = allUsers.filter(u => 
@@ -228,13 +238,27 @@ const NoDues = () => {
                   </div>
                 )}
 
-                <div className="flex justify-between pt-8">
-                  <div className="text-center">
+                <div className="flex justify-between pt-8 mt-12">
+                  <div className="text-center flex flex-col items-center justify-end">
+                    <div className="h-20"></div>
                     <div className="w-48 border-b-2 border-black mb-2"></div>
                     <p className="text-black text-sm font-semibold">Signature of Student</p>
                     <p className="text-black text-xs">Date: ________________</p>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center flex flex-col items-center justify-end">
+                    <div className="h-20 flex items-end justify-center mb-1 w-full">
+                      {adminName && (
+                        <div className="relative text-left text-[11px] text-black leading-tight p-1 inline-block font-sans">
+                          <svg className="absolute inset-0 m-auto w-12 h-12 text-green-500 opacity-40 -z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          <p>Digitally Signed by:</p>
+                          <p className="font-semibold text-sm my-0.5">{adminName}</p>
+                          <p>Date: {new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</p>
+                          <p>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}</p>
+                        </div>
+                      )}
+                    </div>
                     <div className="w-48 border-b-2 border-black mb-2"></div>
                     <p className="text-black text-sm font-semibold">Verified By</p>
                     <p className="text-black text-xs">Date: ________________</p>
