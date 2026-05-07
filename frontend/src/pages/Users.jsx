@@ -21,6 +21,19 @@ import api from "../api";
 import { exportUsersToExcel, importUsersFromExcel } from "../utils/exportUtils";
 import { useDebounce } from "../hooks/useDebounce";
 
+const DEPARTMENTS = [
+  "Chemical & Biochemical Engineering",
+  "Chemistry",
+  "Civil & Environmental Engineering",
+  "Computer Science and Engineering",
+  "Electrical Engineering",
+  "Humanities & Social Sciences",
+  "Mathematics",
+  "Mechanical Engineering",
+  "Metallurgical and Materials Engineering",
+  "Physics"
+];
+
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -138,6 +151,10 @@ const Users = () => {
       toast.error("Name, email, phone, and role are required.");
       return;
     }
+    if ((newUser.role === "Student" || newUser.role === "Faculty") && !newUser.branch) {
+      toast.error("Department is required for Students and Faculty.");
+      return;
+    }
 
     try {
       setIsCreating(true);
@@ -177,6 +194,10 @@ const Users = () => {
     e.preventDefault();
     if (!editUser.fullname || !editUser.phoneNumber || !editUser.role) {
       toast.error("Name, phone number, and role are required.");
+      return;
+    }
+    if ((editUser.role === "Student" || editUser.role === "Faculty") && !editUser.branch) {
+      toast.error("Department is required for Students and Faculty.");
       return;
     }
 
@@ -522,7 +543,7 @@ const Users = () => {
               <form onSubmit={handleAddUser} className="p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                    Full Name
+                    Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -535,7 +556,7 @@ const Users = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                    Institute Email
+                    Institute Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -548,7 +569,7 @@ const Users = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                    Phone Number
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -561,7 +582,7 @@ const Users = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                    Role
+                    Role <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={newUser.role}
@@ -592,15 +613,18 @@ const Users = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                        Department / Branch
+                        Department / Branch <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        placeholder="e.g., Computer Science"
+                      <select
                         value={newUser.branch}
                         onChange={(e) => setNewUser({ ...newUser, branch: e.target.value })}
                         className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
+                      >
+                        <option value="">Select Department</option>
+                        {DEPARTMENTS.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
@@ -634,15 +658,18 @@ const Users = () => {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                        Department
+                        Department <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        placeholder="e.g., Computer Science"
+                      <select
                         value={newUser.branch}
                         onChange={(e) => setNewUser({ ...newUser, branch: e.target.value })}
                         className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
+                      >
+                        <option value="">Select Department</option>
+                        {DEPARTMENTS.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
@@ -749,7 +776,7 @@ const Users = () => {
                 {/* Common fields */}
                 <div>
                   <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                    Full Name
+                    Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -762,7 +789,7 @@ const Users = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                    Phone Number
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -775,7 +802,7 @@ const Users = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                    Role
+                    Role <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={editUser.role}
@@ -806,15 +833,18 @@ const Users = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                        Department / Branch
+                        Department / Branch <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        placeholder="e.g., Computer Science"
+                      <select
                         value={editUser.branch}
                         onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
                         className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
+                      >
+                        <option value="">Select Department</option>
+                        {DEPARTMENTS.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
@@ -848,15 +878,18 @@ const Users = () => {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                        Department
+                        Department <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        placeholder="e.g., Computer Science"
+                      <select
                         value={editUser.branch}
                         onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
                         className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
+                      >
+                        <option value="">Select Department</option>
+                        {DEPARTMENTS.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">

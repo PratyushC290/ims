@@ -4,6 +4,19 @@ import { UserPlus, Mail, Phone, User, Loader2, ArrowLeft, KeyRound, Briefcase, G
 import toast from "react-hot-toast";
 import api from "../api";
 
+const DEPARTMENTS = [
+  "Chemical & Biochemical Engineering",
+  "Chemistry",
+  "Civil & Environmental Engineering",
+  "Computer Science and Engineering",
+  "Electrical Engineering",
+  "Humanities & Social Sciences",
+  "Mathematics",
+  "Mechanical Engineering",
+  "Metallurgical and Materials Engineering",
+  "Physics"
+];
+
 const StudentRegister = () => {
   const [formData, setFormData] = useState({
     fullname: "",
@@ -217,14 +230,17 @@ const StudentRegister = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Branch/Department <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.branch}
                     onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                    placeholder="e.g. Computer Science"
-                    className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
+                    className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
                     required
-                  />
+                  >
+                    <option value="" disabled>Select Department</option>
+                    {DEPARTMENTS.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -247,14 +263,17 @@ const StudentRegister = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Department <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.branch}
                     onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                    placeholder="e.g. Computer Science"
-                    className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
+                    className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
                     required
-                  />
+                  >
+                    <option value="" disabled>Select Department</option>
+                    {DEPARTMENTS.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
                 </div>
               </>
             )}
