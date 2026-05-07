@@ -241,7 +241,7 @@ const user = await User.findOne({ instituteEmail: email });
     }
 
     const allowedRoles = loginType === "student" 
-      ? ["Student"] 
+      ? ["Student", "Faculty", "Staff"] 
       : ["Admin", "Super Admin"];
     
     if (!allowedRoles.includes(user.role)) {
@@ -314,7 +314,7 @@ export const verifyOtp = async (req, res) => {
     }
 
     const allowedRoles = loginType === "student" 
-      ? ["Student"] 
+      ? ["Student", "Faculty", "Staff"] 
       : ["Admin", "Super Admin"];
     
     if (!allowedRoles.includes(user.role)) {

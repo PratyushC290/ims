@@ -186,11 +186,9 @@ const Layout = () => {
       {!isStudent && (
         <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-[var(--theme-panel)] border-r border-[var(--theme-border)] shadow-sm transition-colors duration-300">
           <div className="p-6 flex items-center gap-3">
-            <div className="h-10 w-10 bg-[var(--theme-bg)] rounded-xl shadow-sm flex items-center justify-center border border-[var(--theme-border)]">
-              <MonitorSmartphone className="h-5 w-5 text-[var(--theme-text)]" />
-            </div>
-            <h1 className="text-xl font-bold text-[var(--theme-text)] tracking-tight">
-              IMS Portal
+            <img src="/iitp-logo.png" alt="IITP" className="h-10 w-10 rounded-lg object-contain bg-white" />
+            <h1 className="text-lg font-bold text-[var(--theme-text)] tracking-tight">
+              IIT Patna CC Office
             </h1>
           </div>
 

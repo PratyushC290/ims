@@ -49,15 +49,11 @@ const StudentLogin = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-sky-100 via-blue-50 to-white">
       <div className="max-w-md w-full bg-white/60 backdrop-blur-xl rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-10 border border-white/80 transition-all duration-500">
         <div className="text-center mb-10">
-          <div className="mx-auto h-14 w-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100">
-            {step === 1 ? (
-              <UserPlus className="h-6 w-6 text-gray-800" strokeWidth={2.5} />
-            ) : (
-              <KeyRound className="h-6 w-6 text-gray-800" strokeWidth={2.5} />
-            )}
+          <div className="mx-auto h-14 w-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 overflow-hidden">
+            <img src="/iitp-logo.png" alt="IITP" className="h-10 w-10 object-contain" />
           </div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-            {step === 1 ? "User Portal" : "Enter Security Code"}
+            {step === 1 ? "IIT Patna CC Office Inventory" : "Enter Security Code"}
           </h2>
           <p className="text-sm text-gray-500">
             {step === 1 ? (
