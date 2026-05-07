@@ -57,7 +57,7 @@ const StudentLogin = () => {
             )}
           </div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-            {step === 1 ? "Student Portal" : "Enter Security Code"}
+            {step === 1 ? "User Portal" : "Enter Security Code"}
           </h2>
           <p className="text-sm text-gray-500">
             {step === 1 ? (
@@ -80,7 +80,7 @@ const StudentLogin = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
-                  placeholder="Student Email"
+                  placeholder="Institute Email"
                   required
                 />
               </div>
@@ -99,10 +99,10 @@ const StudentLogin = () => {
             </button>
 
             <p className="text-center text-sm text-gray-500 mt-6">
-              New student?{" "}
+              New user?{" "}
               <button
                 type="button"
-                onClick={() => navigate("/student-register")}
+                onClick={() => navigate("/register-user")}
                 className="text-blue-600 hover:underline font-medium"
               >
                 Register here

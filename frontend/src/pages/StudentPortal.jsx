@@ -90,7 +90,8 @@ const StudentPortal = () => {
   const handleRequestSubmitted = (newRequest) => {
     setMyRequests(prev => [newRequest, ...prev]);
     setShowRequestModal(false);
-    toast.success("Request submitted successfully!");
+    setRequestToPrint(newRequest);
+    toast.success("Request submitted! Please download the form and get it signed.");
   };
 
   return (
@@ -99,6 +100,7 @@ const StudentPortal = () => {
         isOpen={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         onSuccess={handleRequestSubmitted}
+        userRole={fullUser?.role || "Student"}
       />
 
       <div id="print-root" className="hidden print:block absolute top-0 left-0 w-full min-h-screen bg-white z-[9999]">
@@ -109,7 +111,7 @@ const StudentPortal = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[var(--theme-text)]">
-              Welcome back, {userProfile.fullname?.split(' ')[0] || 'Student'}!
+              Welcome back, {userProfile.fullname?.split(' ')[0] || fullUser?.role || 'User'}!
             </h1>
             <p className="text-[var(--theme-text-muted)] mt-1">
               Manage your assets and requests from here

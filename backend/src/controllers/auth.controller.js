@@ -6,16 +6,30 @@ import { Otp } from "../models/OTP.js";
 
 export const signupStudent = async (req, res) => {
   try {
-    const { fullname, instituteEmail, phoneNumber, studentId, branch, alternativeEmail, phdGuide } = req.body;
+    const { fullname, instituteEmail, phoneNumber, role, studentId, branch, alternativeEmail, phdGuide, employeeId } = req.body;
 
-    if (!fullname || !instituteEmail || !phoneNumber || !studentId || !branch) {
+    if (!fullname || !instituteEmail || !phoneNumber || !branch) {
       return res.status(400).json({ message: "All mandatory fields are required." });
+    }
+
+    const userRole = role || "Student";
+    const validRoles = ["Student", "Faculty", "Staff"];
+    if (role && !validRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role selected." });
+    }
+
+    // Role-specific validation
+    if (userRole === "Student" && !studentId) {
+      return res.status(400).json({ message: "Student ID is required for Student registration." });
+    }
+    if (userRole === "Staff" && !employeeId) {
+      return res.status(400).json({ message: "Employee ID is required for Staff registration." });
     }
 
     let existingUser = await User.findOne({ instituteEmail });
 
     if (existingUser) {
-      if (existingUser.role === "Student") {
+      if (existingUser.role === "Student" || existingUser.role === "Faculty" || existingUser.role === "Staff") {
         return res.status(400).json({
           message: "You are already registered. Please login.",
         });
@@ -53,11 +67,13 @@ export const signupStudent = async (req, res) => {
 
 export const verifyStudentSignup = async (req, res) => {
   try {
-    const { fullname, instituteEmail, phoneNumber, otpCode, studentId, branch, alternativeEmail, phdGuide } = req.body;
+    const { fullname, instituteEmail, phoneNumber, otpCode, role, studentId, branch, alternativeEmail, phdGuide, employeeId } = req.body;
 
-    if (!fullname || !instituteEmail || !phoneNumber || !otpCode || !studentId || !branch) {
+    if (!fullname || !instituteEmail || !phoneNumber || !otpCode || !branch) {
       return res.status(400).json({ message: "All mandatory fields are required." });
     }
+
+    const userRole = role || "Student";
 
     const validOtp = await Otp.findOne({ email: instituteEmail });
 
@@ -79,7 +95,7 @@ export const verifyStudentSignup = async (req, res) => {
     let existingUser = await User.findOne({ instituteEmail });
 
     if (existingUser) {
-      if (existingUser.role === "Student") {
+      if (["Student", "Faculty", "Staff"].includes(existingUser.role)) {
         await Otp.deleteOne({ _id: validOtp._id });
         return res.status(400).json({ message: "Already registered. Please login." });
       }
@@ -92,10 +108,11 @@ export const verifyStudentSignup = async (req, res) => {
       instituteEmail,
       phoneNumber,
       studentId,
+      employeeId,
       branch,
       alternativeEmail,
       phdGuide,
-      role: "Student",
+      role: userRole,
       accountStatus: "Approved",
       avatar: "https://default-avatar-url.com/image.png",
     });

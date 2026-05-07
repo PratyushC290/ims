@@ -23,8 +23,8 @@ const App = () => {
       {/* Public Routes */}
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/student-login" element={<StudentLogin />} />
-      <Route path="/student-register" element={<StudentRegister />} />
+      <Route path="/login-user" element={<StudentLogin />} />
+      <Route path="/register-user" element={<StudentRegister />} />
 
       {/* Protected Routes - All users must be authenticated */}
       <Route element={<ProtectedRoute />}>

@@ -106,10 +106,10 @@ const Login = () => {
             </button>
 
             <p className="text-center text-sm text-gray-500">
-              Are you a student?{" "}
+              Are you a user?{" "}
               <button
                 type="button"
-                onClick={() => navigate("/student-login")}
+                onClick={() => navigate("/login-user")}
                 className="text-blue-600 hover:underline font-medium"
               >
                 Login here
