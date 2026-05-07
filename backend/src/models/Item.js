@@ -32,6 +32,10 @@ const itemSchema = new Schema(
     documentUrl: {
       type: String,
     },
+    documentFileId: {
+      type: Schema.Types.ObjectId,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -4,11 +4,10 @@ import {
   issueAsset, returnAsset, returnAllAssets,
   getIssuedAssets, getUserIssuedItems, getUserIssuedItemsById,
   getItemHistory, createBulkItems, getAllIssued,
-  undoAction, assignAsset, updateItemStock, attachItemDocument
+  undoAction, assignAsset, updateItemStock, attachItemDocument, streamItemDocument
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
-
-import { upload } from "../config/cloudinary.js";
+import { upload } from "../config/gridfs.js";
 
 const router = express.Router();
 
@@ -26,6 +25,7 @@ router.get("/:itemId/history", getItemHistory);
 router.post("/assign", assignAsset);
 router.put("/:itemId", updateItem);
 router.patch("/:itemId/document", upload.single("document"), attachItemDocument);
+router.get("/:itemId/document", streamItemDocument);
 router.put("/:itemId/stock", updateItemStock);
 router.put("/:itemId/issue", issueAsset);
 router.put("/return/:issuedAssetId", returnAsset);

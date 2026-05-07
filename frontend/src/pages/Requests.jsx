@@ -33,9 +33,11 @@ const Requests = () => {
       
       const sortedRequests = res.data.requests.sort((a, b) => {
         if (activeTab === "history") {
+          // History: Newest fulfillment first (descending)
           return new Date(b.updatedAt) - new Date(a.updatedAt);
         }
-        return new Date(a.createdAt) - new Date(b.createdAt);
+        // Pending: Newest request first (descending)
+        return new Date(b.createdAt) - new Date(a.createdAt);
       });
       setRequests(sortedRequests);
     } catch (error) {
@@ -113,6 +115,28 @@ const Requests = () => {
       toast.error(error.response?.data?.message || "Failed to attach document");
     } finally {
       setUploadingDoc(false);
+    }
+  };
+
+  const handleViewDocument = async (request) => {
+    // If it's a legacy URL, just open it
+    if (request.documentUrl && !request.documentFileId) {
+      window.open(`http://localhost:3000${request.documentUrl}`, '_blank');
+      return;
+    }
+
+    // GridFS streaming with authentication
+    const loadingToast = toast.loading("Preparing document...");
+    try {
+      const response = await api.get(`/requests/${request._id}/document`, {
+        responseType: 'blob'
+      });
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(file);
+      window.open(fileURL, '_blank');
+      toast.dismiss(loadingToast);
+    } catch (error) {
+      toast.error("Failed to load document", { id: loadingToast });
     }
   };
 
@@ -383,9 +407,9 @@ const Requests = () => {
                           </>
                         )}
                         {request.status === "Fulfilled" && (
-                          request.documentUrl ? (
+                          (request.documentFileId || request.documentUrl) ? (
                             <button
-                              onClick={() => window.open(`http://localhost:3000${request.documentUrl}`, '_blank')}
+                              onClick={() => handleViewDocument(request)}
                               className="p-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors"
                               title="View PDF"
                             >
@@ -410,6 +434,83 @@ const Requests = () => {
           </div>
         )}
       </div>
+
+      {showFulfillModal && selectedRequest && (
+        <FulfillModal
+          isOpen={showFulfillModal}
+          onClose={() => setShowFulfillModal(false)}
+          request={selectedRequest}
+          onSuccess={handleFulfillSuccess}
+        />
+      )}
+
+      {showRejectModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-md w-full p-6 relative border border-[var(--theme-border)]">
+            <button onClick={() => setShowRejectModal({ isOpen: false, requestId: null })} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
+              <XCircle className="h-4 w-4" />
+            </button>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-4">Reject Request</h2>
+            <textarea
+              className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl h-32 resize-none"
+              placeholder="Enter reason for rejection..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowRejectModal({ isOpen: false, requestId: null })}
+                className="flex-1 py-3 bg-[var(--theme-bg)] text-[var(--theme-text)] rounded-xl font-bold border border-[var(--theme-border)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={rejecting}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold disabled:opacity-50"
+              >
+                {rejecting ? "Rejecting..." : "Reject Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddDocModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-md w-full p-6 relative border border-[var(--theme-border)]">
+            <button onClick={() => setShowAddDocModal({ isOpen: false, requestId: null })} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
+              <XCircle className="h-4 w-4" />
+            </button>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-4">Upload Signed Form</h2>
+            <div className="space-y-4">
+              <div 
+                className="border-2 border-dashed border-[var(--theme-border)] rounded-2xl p-8 text-center hover:border-[var(--theme-accent)] transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="application/pdf"
+                  onChange={handleFileChange}
+                />
+                <UploadCloud className="h-10 w-10 text-[var(--theme-text-muted)] mx-auto mb-3" />
+                <p className="text-sm text-[var(--theme-text-muted)]">
+                  {selectedDoc ? selectedDoc.name : "Click to select or drag and drop signed PDF"}
+                </p>
+              </div>
+              <button
+                onClick={handleAddDocument}
+                disabled={uploadingDoc || !selectedDoc}
+                className="w-full py-3 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl font-bold disabled:opacity-50"
+              >
+                {uploadingDoc ? "Uploading..." : "Attach Document"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

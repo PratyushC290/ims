@@ -177,6 +177,28 @@ const Inventory = () => {
     e.target.value = null;
   };
 
+  const handleViewDocument = async (item) => {
+    // If it's a legacy URL, just open it
+    if (item.documentUrl && !item.documentFileId) {
+      window.open(`http://localhost:3000${item.documentUrl}`, '_blank');
+      return;
+    }
+
+    // GridFS streaming with authentication
+    const loadingToast = toast.loading("Preparing document...");
+    try {
+      const response = await api.get(`/items/${item._id}/document`, {
+        responseType: 'blob'
+      });
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(file);
+      window.open(fileURL, '_blank');
+      toast.dismiss(loadingToast);
+    } catch (error) {
+      toast.error("Failed to load document", { id: loadingToast });
+    }
+  };
+
   const handleUploadDocClick = (item) => {
     setUploadingDocItem(item);
     setIsUploadDocModalOpen(true);
@@ -436,18 +458,15 @@ const Inventory = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      {item.documentUrl && (
-                        <a
-                          href={`http://localhost:3000${item.documentUrl}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {(item.documentFileId || item.documentUrl) ? (
+                        <button
+                          onClick={() => handleViewDocument(item)}
                           className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
                           title="View Document"
                         >
                           <Eye className="h-4 w-4 text-purple-500" />
-                        </a>
-                      )}
-                      {!item.documentUrl && (
+                        </button>
+                      ) : (
                         <button
                           onClick={() => handleUploadDocClick(item)}
                           className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"

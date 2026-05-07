@@ -313,7 +313,7 @@ export const exportCatalog = async (api, filename = "catalog_export") => {
     const formattedData = items.map(item => ({
       "Asset Name": item.name || "",
       "Category": item.category || "General",
-      "Total Quantity": item.totalQuantity || 0,
+      "Quantity": item.totalQuantity || 0,
       "Available": item.availableQuantity || 0,
       "Date Added": item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "",
     }));
@@ -338,7 +338,7 @@ export const importCatalogFromExcel = async (file, api) => {
         const items = jsonData.map(row => ({
           name: row["Asset Name"] || row.name || row.Name || "",
           category: row.Category || row.category || "General",
-          totalQuantity: Number(row["Total Quantity"] || row.totalQuantity || row.quantity || 0),
+          totalQuantity: Number(row.Quantity || row["Total Quantity"] || row.totalQuantity || row.quantity || 0),
         })).filter(item => item.name && item.totalQuantity > 0);
         
         if (items.length === 0) {

@@ -3,6 +3,7 @@ import { IssuedAsset } from "../models/IssuedAsset.js";
 import { User } from "../models/User.js";
 import { History } from "../models/History.js";
 import { ActionLog } from "../models/ActionLog.js";
+import { uploadToGridFS, streamFromGridFS } from "../config/gridfs.js";
 
 export const createItem = async (req, res) => {
   try {
@@ -12,9 +13,9 @@ export const createItem = async (req, res) => {
       return res.status(400).json({ message: "Name and total quantity are required." });
     }
 
-    let documentUrl = null;
+    let documentFileId = null;
     if (req.file) {
-      documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+      documentFileId = await uploadToGridFS(req.file);
     }
 
     const newItem = await Item.create({
@@ -23,7 +24,7 @@ export const createItem = async (req, res) => {
       description: description || "",
       totalQuantity: Number(totalQuantity),
       availableQuantity: Number(totalQuantity),
-      documentUrl,
+      documentFileId,
     });
 
     res.status(201).json({
@@ -636,13 +637,30 @@ export const attachItemDocument = async (req, res) => {
       return res.status(404).json({ message: "Item not found." });
     }
 
-    item.documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+    const fileId = await uploadToGridFS(req.file);
+    item.documentFileId = fileId;
     await item.save();
 
     res.status(200).json({
       message: "Document attached successfully.",
       item,
     });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const streamItemDocument = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const item = await Item.findById(itemId);
+
+    if (!item || !item.documentFileId) {
+      return res.status(404).json({ message: "Document not found." });
+    }
+
+    res.set("Content-Type", "application/pdf");
+    streamFromGridFS(item.documentFileId, res);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

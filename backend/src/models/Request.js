@@ -41,6 +41,10 @@ const requestSchema = new Schema(
       type: String,
       default: null,
     },
+    documentFileId: {
+      type: Schema.Types.ObjectId,
+      default: null,
+    },
   },
   {
     timestamps: true,

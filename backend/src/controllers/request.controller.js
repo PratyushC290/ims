@@ -3,6 +3,7 @@ import { User } from "../models/User.js";
 import { Item } from "../models/Item.js";
 import { IssuedAsset } from "../models/IssuedAsset.js";
 import { History } from "../models/History.js";
+import { uploadToGridFS, streamFromGridFS } from "../config/gridfs.js";
 
 export const createRequest = async (req, res) => {
   try {
@@ -276,7 +277,8 @@ export const fulfillRequest = async (req, res) => {
     }
 
     if (req.file) {
-      request.documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+      const fileId = await uploadToGridFS(req.file);
+      request.documentFileId = fileId;
     }
 
     request.status = "Fulfilled";
@@ -305,13 +307,30 @@ export const uploadRequestDocument = async (req, res) => {
       return res.status(400).json({ message: "No document provided." });
     }
 
-    request.documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+    const fileId = await uploadToGridFS(req.file);
+    request.documentFileId = fileId;
     await request.save();
 
     res.status(200).json({
       message: "Document attached successfully.",
       request,
     });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const streamRequestDocument = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const request = await Request.findById(requestId);
+
+    if (!request || !request.documentFileId) {
+      return res.status(404).json({ message: "Document not found." });
+    }
+
+    res.set("Content-Type", "application/pdf");
+    streamFromGridFS(request.documentFileId, res);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

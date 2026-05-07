@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { seedNotifications } from "../controllers/notification.controller.js";
 
 const RETRY_DELAY_MS = 5000;
+let bucket;
 
 const connectDB = async () => {
   try {
@@ -9,6 +10,11 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000,
     });
     console.log(`MongoDB Connected: ${connection.connection.host}`);
+
+    // Initialize GridFS bucket
+    bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+      bucketName: "documents"
+    });
 
     try {
       await seedNotifications();
@@ -23,4 +29,5 @@ const connectDB = async () => {
   }
 };
 
+export const getBucket = () => bucket;
 export default connectDB;
