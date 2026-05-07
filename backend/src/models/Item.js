@@ -29,6 +29,9 @@ const itemSchema = new Schema(
       min: 0,
       default: 0,
     },
+    documentUrl: {
+      type: String,
+    },
   },
   {
     timestamps: true,

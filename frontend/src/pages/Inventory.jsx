@@ -1,7 +1,7 @@
 // edited for stock-based catalog
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback } from "react";
-import { PackagePlus, Search, Loader2, X, Package, AlertTriangle, History as HistoryIcon, Plus, Edit2, CheckCircle } from "lucide-react";
+import { PackagePlus, Search, Loader2, X, Package, AlertTriangle, History as HistoryIcon, Plus, Edit2, CheckCircle, Eye, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import Pagination from "../components/Pagination";
@@ -21,7 +21,7 @@ const Inventory = () => {
   const [users, setUsers] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
 
-  const [newItem, setNewItem] = useState({ name: "", category: "", totalQuantity: 0 });
+  const [newItem, setNewItem] = useState({ name: "", category: "", totalQuantity: 0, document: null });
   const [editItem, setEditItem] = useState({ name: "", category: "", totalQuantity: 0 });
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState(null);
@@ -68,10 +68,18 @@ const Inventory = () => {
     if (!newItem.name.trim()) return toast.error("Item name is required");
     if (!newItem.totalQuantity || newItem.totalQuantity <= 0) return toast.error("Quantity must be greater than 0");
     try {
-      await api.post("/items", { ...newItem, totalQuantity: Number(newItem.totalQuantity) });
+      const formData = new FormData();
+      formData.append("name", newItem.name);
+      formData.append("category", newItem.category);
+      formData.append("totalQuantity", Number(newItem.totalQuantity));
+      if (newItem.document) {
+        formData.append("document", newItem.document);
+      }
+
+      await api.post("/items", formData);
       toast.success("Item added to catalog");
       setIsAddModalOpen(false);
-      setNewItem({ name: "", category: "", totalQuantity: 0 });
+      setNewItem({ name: "", category: "", totalQuantity: 0, document: null });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to add item");
@@ -367,6 +375,17 @@ const Inventory = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      {item.documentUrl && (
+                        <a
+                          href={`http://localhost:3000${item.documentUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
+                          title="View Document"
+                        >
+                          <Eye className="h-4 w-4 text-purple-500" />
+                        </a>
+                      )}
                       <button
                         onClick={() => handleViewHistory(item)}
                         className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
@@ -435,6 +454,17 @@ const Inventory = () => {
                   placeholder="0"
                   min="0"
                   className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-2">
+                  <FileText className="inline-block h-4 w-4 mr-1" /> Document/PDF (Optional)
+                </label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setNewItem({ ...newItem, document: e.target.files[0] })}
+                  className="w-full p-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
               <button type="submit" className="w-full py-3 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl font-bold">

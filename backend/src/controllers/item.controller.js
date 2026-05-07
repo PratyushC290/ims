@@ -12,12 +12,18 @@ export const createItem = async (req, res) => {
       return res.status(400).json({ message: "Name and total quantity are required." });
     }
 
+    let documentUrl = null;
+    if (req.file) {
+      documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+    }
+
     const newItem = await Item.create({
       name,
       category: category || "General",
       description: description || "",
       totalQuantity: Number(totalQuantity),
       availableQuantity: Number(totalQuantity),
+      documentUrl,
     });
 
     res.status(201).json({

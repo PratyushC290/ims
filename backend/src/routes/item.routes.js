@@ -8,13 +8,15 @@ import {
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 
+import { upload } from "../config/cloudinary.js";
+
 const router = express.Router();
 
 router.use(protectRoute);
 
 router.post("/bulk", createBulkItems);
 
-router.post("/", createItem);
+router.post("/", upload.single("document"), createItem);
 router.get("/", getAllItems);
 router.get("/issued", getAllIssued);
 router.get("/my-issued", getUserIssuedItems);
