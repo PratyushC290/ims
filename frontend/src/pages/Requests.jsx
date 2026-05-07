@@ -13,7 +13,6 @@ const Requests = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showFulfillModal, setShowFulfillModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState({ isOpen: false, requestId: null });
-  const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [showAddDocModal, setShowAddDocModal] = useState({ isOpen: false, requestId: null });
   const [uploadingDoc, setUploadingDoc] = useState(false);
@@ -55,7 +54,6 @@ const Requests = () => {
       });
       toast.success("Request rejected");
       setShowRejectModal({ isOpen: false, requestId: null });
-      setRejectReason("");
       fetchRequests();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to reject request");
@@ -175,13 +173,6 @@ const Requests = () => {
             <p className="text-sm text-[var(--theme-text-muted)] mb-4">
               Are you sure you want to reject this request? This action cannot be undone.
             </p>
-            <textarea
-              placeholder="Reason for rejection (optional)..."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-red-500 mb-4 resize-none"
-              rows={3}
-            />
             <div className="flex gap-3">
               <button
                 onClick={() => setShowRejectModal({ isOpen: false, requestId: null })}
@@ -451,12 +442,6 @@ const Requests = () => {
               <XCircle className="h-4 w-4" />
             </button>
             <h2 className="text-xl font-bold text-[var(--theme-text)] mb-4">Reject Request</h2>
-            <textarea
-              className="w-full p-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl h-32 resize-none"
-              placeholder="Enter reason for rejection..."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowRejectModal({ isOpen: false, requestId: null })}

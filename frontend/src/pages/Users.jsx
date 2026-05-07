@@ -151,8 +151,12 @@ const Users = () => {
       toast.error("Name, email, phone, and role are required.");
       return;
     }
-    if ((newUser.role === "Student" || newUser.role === "Faculty") && !newUser.branch) {
-      toast.error("Department is required for Students and Faculty.");
+    if (newUser.role === "Student" && !newUser.studentId) {
+      toast.error("Student ID / Roll Number is required for Students.");
+      return;
+    }
+    if ((newUser.role === "Student" || newUser.role === "Faculty" || newUser.role === "Staff") && !newUser.branch) {
+      toast.error("Department is required for Students, Faculty, and Staff.");
       return;
     }
 
@@ -176,6 +180,9 @@ const Users = () => {
         userData.alternativeEmail = newUser.alternativeEmail;
       } else if (["Admin", "Staff"].includes(newUser.role)) {
         userData.alternativeEmail = newUser.alternativeEmail;
+        if (newUser.role === "Staff") {
+          userData.branch = newUser.branch;
+        }
       }
 
       await api.post("/users/add", userData);
@@ -196,8 +203,12 @@ const Users = () => {
       toast.error("Name, phone number, and role are required.");
       return;
     }
-    if ((editUser.role === "Student" || editUser.role === "Faculty") && !editUser.branch) {
-      toast.error("Department is required for Students and Faculty.");
+    if (editUser.role === "Student" && !editUser.studentId) {
+      toast.error("Student ID / Roll Number is required for Students.");
+      return;
+    }
+    if ((editUser.role === "Student" || editUser.role === "Faculty" || editUser.role === "Staff") && !editUser.branch) {
+      toast.error("Department is required for Students, Faculty, and Staff.");
       return;
     }
 
@@ -225,6 +236,9 @@ const Users = () => {
       // Role is Admin/Staff - include staff fields
       else if (["Admin", "Staff"].includes(editUser.role)) {
         updateData.alternativeEmail = editUser.alternativeEmail;
+        if (editUser.role === "Staff") {
+          updateData.branch = editUser.branch;
+        }
       }
 
       await api.put(`/users/${editUser._id}`, updateData);
@@ -601,10 +615,11 @@ const Users = () => {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                        Student ID / Roll Number
+                        Student ID / Roll Number <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
+                        required
                         placeholder="e.g., 21BCS001"
                         value={newUser.studentId}
                         onChange={(e) => setNewUser({ ...newUser, studentId: e.target.value })}
@@ -688,18 +703,35 @@ const Users = () => {
 
                 {/* Admin/Staff-specific fields */}
                 {["Admin", "Staff"].includes(newUser.role) && (
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                      Alternative Email
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="personal@email.com"
-                      value={newUser.alternativeEmail}
-                      onChange={(e) => setNewUser({ ...newUser, alternativeEmail: e.target.value })}
-                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                    />
-                  </div>
+                  <>
+                    {newUser.role === "Staff" && (
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                          Department <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. IT Department"
+                          value={newUser.branch}
+                          onChange={(e) => setNewUser({ ...newUser, branch: e.target.value })}
+                          className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                        Alternative Email
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="personal@email.com"
+                        value={newUser.alternativeEmail}
+                        onChange={(e) => setNewUser({ ...newUser, alternativeEmail: e.target.value })}
+                        className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="flex gap-3 pt-4">
@@ -821,10 +853,11 @@ const Users = () => {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                        Student ID / Roll Number
+                        Student ID / Roll Number <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
+                        required
                         placeholder="e.g., 21BCS001"
                         value={editUser.studentId}
                         onChange={(e) => setEditUser({ ...editUser, studentId: e.target.value })}
@@ -908,18 +941,35 @@ const Users = () => {
 
                 {/* Admin/Staff-specific fields */}
                 {["Admin", "Staff"].includes(editUser.role) && (
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                      Alternative Email
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="personal@email.com"
-                      value={editUser.alternativeEmail}
-                      onChange={(e) => setEditUser({ ...editUser, alternativeEmail: e.target.value })}
-                      className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                    />
-                  </div>
+                  <>
+                    {editUser.role === "Staff" && (
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                          Department <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. IT Department"
+                          value={editUser.branch}
+                          onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
+                          className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                        Alternative Email
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="personal@email.com"
+                        value={editUser.alternativeEmail}
+                        onChange={(e) => setEditUser({ ...editUser, alternativeEmail: e.target.value })}
+                        className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="flex gap-3 pt-4">

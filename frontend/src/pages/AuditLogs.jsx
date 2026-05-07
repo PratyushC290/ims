@@ -170,8 +170,6 @@ const AuditLogs = () => {
                 <option value="All">All Actions</option>
                 <option value="Assigned">Assigned</option>
                 <option value="Returned">Returned</option>
-                <option value="Sent to Maintenance">Sent to Maintenance</option>
-                <option value="Removed from Maintenance">Removed from Maintenance</option>
               </select>
             </div>
             <input
