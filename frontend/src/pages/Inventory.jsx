@@ -1,10 +1,11 @@
 // edited for stock-based catalog
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback } from "react";
-import { PackagePlus, Search, Loader2, X, Package, AlertTriangle, History as HistoryIcon, Plus, Edit2, CheckCircle, Eye, FileText } from "lucide-react";
+import { PackagePlus, Search, Loader2, X, Package, AlertTriangle, History as HistoryIcon, Plus, Edit2, CheckCircle, Eye, FileText, Download, Upload, FileUp } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import Pagination from "../components/Pagination";
+import { exportCatalog, importCatalogFromExcel } from "../utils/exportUtils";
 
 const Inventory = () => {
   const [items, setItems] = useState([]);
@@ -23,6 +24,9 @@ const Inventory = () => {
 
   const [newItem, setNewItem] = useState({ name: "", category: "", totalQuantity: 0, document: null });
   const [editItem, setEditItem] = useState({ name: "", category: "", totalQuantity: 0 });
+  const [isUploadDocModalOpen, setIsUploadDocModalOpen] = useState(false);
+  const [uploadingDocItem, setUploadingDocItem] = useState(null);
+  const [docFile, setDocFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
@@ -146,6 +150,54 @@ const Inventory = () => {
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update item");
+    }
+  };
+
+  const handleExportCatalog = async () => {
+    try {
+      await exportCatalog(api, "inventory_catalog");
+      toast.success("Catalog exported successfully");
+    } catch (error) {
+      toast.error("Failed to export catalog");
+    }
+  };
+
+  const handleImportCatalog = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const loadingToast = toast.loading("Importing catalog...");
+    try {
+      await importCatalogFromExcel(file, api);
+      toast.success("Catalog imported successfully", { id: loadingToast });
+      fetchData();
+    } catch (error) {
+      toast.error(error.message || "Failed to import catalog", { id: loadingToast });
+    }
+    e.target.value = null;
+  };
+
+  const handleUploadDocClick = (item) => {
+    setUploadingDocItem(item);
+    setIsUploadDocModalOpen(true);
+    setDocFile(null);
+  };
+
+  const handleDocUploadSubmit = async (e) => {
+    e.preventDefault();
+    if (!docFile) return toast.error("Please select a PDF file");
+
+    const loadingToast = toast.loading("Uploading document...");
+    try {
+      const formData = new FormData();
+      formData.append("document", docFile);
+
+      await api.patch(`/items/${uploadingDocItem._id}/document`, formData);
+      toast.success("Document uploaded successfully", { id: loadingToast });
+      setIsUploadDocModalOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to upload document", { id: loadingToast });
     }
   };
 
@@ -312,6 +364,16 @@ const Inventory = () => {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleExportCatalog}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700"
+            >
+              <Download className="h-4 w-4" /> Export
+            </button>
+            <label className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 cursor-pointer">
+              <Upload className="h-4 w-4" /> Import
+              <input type="file" accept=".xlsx, .xls" onChange={handleImportCatalog} className="hidden" />
+            </label>
+            <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-[var(--theme-text)] text-[var(--theme-panel)] rounded-xl text-sm font-bold hover:opacity-80"
             >
@@ -384,6 +446,15 @@ const Inventory = () => {
                         >
                           <Eye className="h-4 w-4 text-purple-500" />
                         </a>
+                      )}
+                      {!item.documentUrl && (
+                        <button
+                          onClick={() => handleUploadDocClick(item)}
+                          className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
+                          title="Upload PDF"
+                        >
+                          <FileUp className="h-4 w-4 text-orange-500" />
+                        </button>
                       )}
                       <button
                         onClick={() => handleViewHistory(item)}
@@ -733,6 +804,51 @@ const Inventory = () => {
                   className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold"
                 >
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isUploadDocModalOpen && uploadingDocItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-[var(--theme-panel)] rounded-[2rem] shadow-2xl max-w-md w-full p-6 relative border border-[var(--theme-border)]">
+            <button onClick={() => setIsUploadDocModalOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--theme-text-muted)] bg-[var(--theme-bg)] rounded-full">
+              <X className="h-4 w-4" />
+            </button>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">Upload Document</h2>
+            <p className="text-sm text-[var(--theme-text-muted)] mb-4">Attach a PDF to <strong>{uploadingDocItem.name}</strong></p>
+
+            <form onSubmit={handleDocUploadSubmit} className="space-y-4">
+              <div className="p-4 border-2 border-dashed border-[var(--theme-border)] rounded-xl bg-[var(--theme-bg)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-500/50 transition-colors relative">
+                <FileText className="h-8 w-8 text-[var(--theme-text-muted)]" />
+                <span className="text-sm text-[var(--theme-text-muted)] text-center">
+                  {docFile ? docFile.name : "Select PDF Document"}
+                </span>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setDocFile(e.target.files[0])}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadDocModalOpen(false)}
+                  className="flex-1 py-3 bg-[var(--theme-bg)] text-[var(--theme-text)] rounded-xl font-semibold border border-[var(--theme-border)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!docFile}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold disabled:opacity-50"
+                >
+                  Upload PDF
                 </button>
               </div>
             </form>

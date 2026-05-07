@@ -1,10 +1,10 @@
 import express from "express";
 import {
-  createItem, getAllItems, updateItemStock, updateItem,
-  issueAsset, returnAsset, getIssuedAssets, getItemHistory,
-  deleteItem, createBulkItems, getAllIssued,
-  undoAction, getUserIssuedItems,
-  assignAsset, getUserIssuedItemsById, returnAllAssets
+  createItem, getAllItems, updateItem, deleteItem,
+  issueAsset, returnAsset, returnAllAssets,
+  getIssuedAssets, getUserIssuedItems, getUserIssuedItemsById,
+  getItemHistory, createBulkItems, getAllIssued,
+  undoAction, assignAsset, updateItemStock, attachItemDocument
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 
@@ -25,6 +25,7 @@ router.get("/:itemId/history", getItemHistory);
 
 router.post("/assign", assignAsset);
 router.put("/:itemId", updateItem);
+router.patch("/:itemId/document", upload.single("document"), attachItemDocument);
 router.put("/:itemId/stock", updateItemStock);
 router.put("/:itemId/issue", issueAsset);
 router.put("/return/:issuedAssetId", returnAsset);

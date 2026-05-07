@@ -304,3 +304,56 @@ export const importUsersFromExcel = async (file, api) => {
     reader.readAsArrayBuffer(file);
   });
 };
+
+export const exportCatalog = async (api, filename = "catalog_export") => {
+  try {
+    const response = await api.get("/items?limit=1000");
+    const items = response.data.items || [];
+    
+    const formattedData = items.map(item => ({
+      "Asset Name": item.name || "",
+      "Category": item.category || "General",
+      "Total Quantity": item.totalQuantity || 0,
+      "Available": item.availableQuantity || 0,
+      "Date Added": item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "",
+    }));
+    
+    exportToExcel(formattedData, filename, "Catalog");
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const importCatalogFromExcel = async (file, api) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        
+        const items = jsonData.map(row => ({
+          name: row["Asset Name"] || row.name || row.Name || "",
+          category: row.Category || row.category || "General",
+          totalQuantity: Number(row["Total Quantity"] || row.totalQuantity || row.quantity || 0),
+        })).filter(item => item.name && item.totalQuantity > 0);
+        
+        if (items.length === 0) {
+          reject(new Error("No valid items found. Required columns: Asset Name, Total Quantity"));
+          return;
+        }
+        
+        const res = await api.post("/items/bulk", { items });
+        resolve(res.data);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsArrayBuffer(file);
+  });
+};

@@ -623,3 +623,27 @@ export const assignAsset = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const attachItemDocument = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    if (!req.file) {
+      return res.status(400).json({ message: "No document provided." });
+    }
+
+    const item = await Item.findById(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found." });
+    }
+
+    item.documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+    await item.save();
+
+    res.status(200).json({
+      message: "Document attached successfully.",
+      item,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
