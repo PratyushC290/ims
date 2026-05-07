@@ -80,10 +80,18 @@ const UserAssets = () => {
   const filteredUsers = users.filter(user => {
     const matchesRole = roleFilter === "All" || user.role === roleFilter;
     const matchesDepartment = departmentFilter === "All" || user.branch === departmentFilter;
+    
+    const userItems = userIssuedMap[user._id] || [];
+    const hasMatchingItem = userItems.some(item => 
+      item.identifier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.catalogItem?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
     const matchesSearch = !searchTerm || 
       user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.instituteEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    const userItems = userIssuedMap[user._id] || [];
+      user.instituteEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hasMatchingItem;
+    
     const hasItems = userItems.length > 0;
     const matchesItemsFilter = !showUsersWithItems || hasItems;
     return matchesRole && matchesSearch && matchesItemsFilter && matchesDepartment;
@@ -163,7 +171,7 @@ const UserAssets = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--theme-text-muted)]" />
           <input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder="Search by name, email, or item identifier..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500"
