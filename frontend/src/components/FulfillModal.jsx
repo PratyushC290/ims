@@ -77,8 +77,6 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
   const updateItemType = (index, value) => {
     const newItems = [...items];
     newItems[index].itemType = value;
-    newItems[index].quantity = 1;
-    newItems[index].identifiers = [""];
     setItems(newItems);
     // Clear selection state when user types to show dropdown
     const newSelected = { ...selectedItems };
@@ -89,8 +87,14 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
   const handleSelectItemType = (index, item) => {
     const newItems = [...items];
     newItems[index].itemType = item.name;
-    newItems[index].quantity = 1;
-    newItems[index].identifiers = [""];
+    // Only reset quantity if it's invalid (< 1), otherwise keep original
+    if (newItems[index].quantity < 1) {
+      newItems[index].quantity = 1;
+    }
+    // Resize identifiers array to match quantity
+    newItems[index].identifiers = Array(newItems[index].quantity).fill("").map((_, i) => 
+      newItems[index].identifiers[i] || ""
+    );
     setItems(newItems);
     setSelectedItems({ ...selectedItems, [index]: item });
   };
