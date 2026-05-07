@@ -55,11 +55,7 @@ export const getMyRequests = async (req, res) => {
 
 export const getAllRequests = async (req, res) => {
   try {
-    const { status, search, page = 1, limit = 20 } = req.query;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
+    const { status, search } = req.query;
 
     const pipeline = [
       { $lookup: { from: "users", localField: "user", foreignField: "_id", as: "userData" } },
@@ -94,13 +90,7 @@ export const getAllRequests = async (req, res) => {
       pipeline.push({ $match: { $and: matchConditions } });
     }
 
-    const countPipeline = [...pipeline, { $count: "total" }];
-    const countResult = await Request.aggregate(countPipeline);
-    const total = countResult[0]?.total || 0;
-
-    pipeline.push({ $sort: { createdAt: 1 } });
-    pipeline.push({ $skip: skip });
-    pipeline.push({ $limit: limitNum });
+    pipeline.push({ $sort: { createdAt: -1 } });
 
     const requests = await Request.aggregate(pipeline);
 
@@ -111,12 +101,6 @@ export const getAllRequests = async (req, res) => {
 
     res.status(200).json({
       requests: requestsWithUser,
-      pagination: {
-        totalRequests: total,
-        totalPages: Math.ceil(total / limitNum),
-        currentPage: pageNum,
-        itemsPerPage: limitNum,
-      },
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

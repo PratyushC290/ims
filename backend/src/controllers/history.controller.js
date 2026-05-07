@@ -34,10 +34,6 @@ export const getLatestActivity = async (req, res) => {
 
 export const getGlobalAuditLog = async (req, res) => {
   try {
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
-    const skip = (page - 1) * limit;
-
     const { fromDate, toDate, action } = req.query;
 
     const query = {};
@@ -52,25 +48,15 @@ export const getGlobalAuditLog = async (req, res) => {
     }
     if (action) query.action = action;
 
-    const [logs, totalLogs] = await Promise.all([
-      History.find(query)
-        .populate("item", "name identifier category")
-        .populate("targetUser", "fullname instituteEmail branch studentId role")
-        .populate("authorizedBy", "fullname")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      History.countDocuments(query),
-    ]);
+    const logs = await History.find(query)
+      .populate("item", "name identifier category")
+      .populate("targetUser", "fullname instituteEmail branch studentId role")
+      .populate("authorizedBy", "fullname")
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       logs,
-      pagination: {
-        totalLogs,
-        totalPages: Math.ceil(totalLogs / limit),
-        currentPage: page,
-      },
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

@@ -47,10 +47,6 @@ export const getAllItems = async (req, res) => {
   try {
     const { status, category, search } = req.query;
 
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
-    const skip = (page - 1) * limit;
-
     let query = {};
     if (search) {
       query.$or = [
@@ -63,22 +59,11 @@ export const getAllItems = async (req, res) => {
       query.category = category;
     }
 
-    const [items, totalItems] = await Promise.all([
-      Item.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      Item.countDocuments(query),
-    ]);
+    const items = await Item.find(query)
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       items,
-      pagination: {
-        totalItems,
-        totalPages: Math.ceil(totalItems / limit),
-        currentPage: page,
-        itemsPerPage: limit,
-      },
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
-import Pagination from "../components/Pagination";
 import { exportUsersToExcel, importUsersFromExcel } from "../utils/exportUtils";
+import { useDebounce } from "../hooks/useDebounce";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -37,10 +37,8 @@ const Users = () => {
   });
   const [isCreating, setIsCreating] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState("Admin");
-  const [pagination, setPagination] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [roleFilter, setRoleFilter] = useState("All");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
@@ -51,28 +49,25 @@ const Users = () => {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const queryParams = [`page=${page}`, `limit=${limit}`];
+      const queryParams = [];
       if (roleFilter !== "All") queryParams.push(`role=${roleFilter}`);
-      const response = await api.get(`/users?${queryParams.join('&')}`);
-      setUsers(response.data.users);
-      setPagination(response.data.pagination);
+      const response = await api.get(`/users${queryParams.length ? '?' + queryParams.join('&') : ''}`);
+      setUsers(response.data.users || []);
     } catch (error) {
       toast.error("Failed to load user directory");
     } finally {
       setLoading(false);
     }
-  }, [page, limit, roleFilter]);
+  }, [roleFilter]);
 
-  const handleLimitChange = (newLimit) => {
-    setLimit(newLimit);
-    setPage(1);
-  };
-
-  const filteredUsers = users.filter(
-    (user) =>
-      user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.instituteEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    if (!debouncedSearch) return true;
+    const term = debouncedSearch.toLowerCase();
+    return (
+      user.fullname.toLowerCase().includes(term) ||
+      user.instituteEmail.toLowerCase().includes(term)
+    );
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -353,7 +348,7 @@ const Users = () => {
           </div>
           <select 
             value={roleFilter} 
-            onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+            onChange={(e) => setRoleFilter(e.target.value)}
             className="sm:w-48 p-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-sm text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
           >
             <option value="All">All Roles</option>
@@ -390,7 +385,13 @@ const Users = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--theme-border)]">
-              {filteredUsers.length === 0 ? (
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-[var(--theme-text-muted)]">
+                    No users found.
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-[var(--theme-text-muted)]">
                     No users found matching your search.
@@ -495,8 +496,6 @@ const Users = () => {
             </tbody>
           </table>
         </div>
-
-        <Pagination pagination={pagination} onPageChange={setPage} onLimitChange={handleLimitChange} loading={loading} />
       </div>
 
       {isAddModalOpen && (

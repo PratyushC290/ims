@@ -3,37 +3,35 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Loader2, History as HistoryIcon, RotateCcw, ArrowLeftRight, X } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
-import Pagination from "../components/Pagination";
+import { useDebounce } from "../hooks/useDebounce";
 
 const IssuedItems = () => {
   const [issuedAssets, setIssuedAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState(null);
-  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [itemHistory, setItemHistory] = useState([]);
 
   const fetchIssuedAssets = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/items/issued?page=${page}&limit=20`);
+      const response = await api.get(`/items/issued`);
       setIssuedAssets(response.data.issuedAssets || []);
-      setPagination(response.data.pagination);
     } catch (error) {
       toast.error("Failed to load issued items");
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
 
   useEffect(() => {
     fetchIssuedAssets();
   }, [fetchIssuedAssets]);
 
   const filteredIssued = issuedAssets.filter((asset) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
+    if (!debouncedSearch) return true;
+    const term = debouncedSearch.toLowerCase();
     return (
       asset.catalogItem?.name?.toLowerCase().includes(term) ||
       asset.identifier?.toLowerCase().includes(term) ||
@@ -154,10 +152,16 @@ const IssuedItems = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--theme-border)]">
-              {filteredIssued.length === 0 ? (
+              {issuedAssets.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-[var(--theme-text-muted)]">
                     No issued items found
+                  </td>
+                </tr>
+              ) : filteredIssued.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-[var(--theme-text-muted)]">
+                    No issued items found matching your search
                   </td>
                 </tr>
               ) : (
@@ -230,12 +234,6 @@ const IssuedItems = () => {
             </tbody>
           </table>
         </div>
-
-        <Pagination
-          pagination={pagination}
-          onPageChange={setPage}
-          loading={loading}
-        />
       </div>
 
       {historyModalOpen && (

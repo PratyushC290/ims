@@ -13,30 +13,26 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
-import Pagination from "../components/Pagination";
 import { exportAuditLogs } from "../utils/exportUtils";
+import { useDebounce } from "../hooks/useDebounce";
 
 const AuditLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [pagination, setPagination] = useState(null);
-  const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [fromDate, setFromDate] = useState("");
+  const debouncedFromDate = useDebounce(fromDate, 300);
   const [toDate, setToDate] = useState("");
+  const debouncedToDate = useDebounce(toDate, 300);
   const [actionFilter, setActionFilter] = useState("All");
 
-  const fetchLogs = useCallback(async (fetchPage = 1, fetchFromDate = "", fetchToDate = "", fetchActionFilter = "All") => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
-      let url = `/history/global?page=${fetchPage}&limit=20`;
-      if (fetchFromDate) url += `&fromDate=${fetchFromDate}`;
-      if (fetchToDate) url += `&toDate=${fetchToDate}`;
-      if (fetchActionFilter !== "All") url += `&action=${fetchActionFilter}`;
-      const response = await api.get(url);
-      setLogs(response.data.logs);
-      setPagination(response.data.pagination);
+      const response = await api.get(`/history/global`);
+      setLogs(response.data.logs || []);
     } catch (error) {
       toast.error("Failed to load audit logs");
     } finally {
@@ -45,12 +41,11 @@ const AuditLogs = () => {
   }, []);
 
   useEffect(() => {
-    fetchLogs(page, fromDate, toDate, actionFilter);
-  }, [page]);
+    fetchLogs();
+  }, [fetchLogs]);
 
-  const applyFilters = () => {
-    setPage(1);
-    fetchLogs(1, fromDate, toDate, actionFilter);
+const applyFilters = () => {
+    fetchLogs();
   };
 
   const handleExport = async () => {
@@ -66,14 +61,35 @@ const AuditLogs = () => {
   };
 
   const filteredLogs = logs.filter((log) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      log.item?.name?.toLowerCase().includes(term) ||
-      log.notes?.toLowerCase().includes(term) ||
-      log.targetUser?.fullname?.toLowerCase().includes(term) ||
-      log.action?.toLowerCase().includes(term)
-    );
+    if (debouncedSearch) {
+      const term = debouncedSearch.toLowerCase();
+      const matchesSearch =
+        log.item?.name?.toLowerCase().includes(term) ||
+        log.notes?.toLowerCase().includes(term) ||
+        log.targetUser?.fullname?.toLowerCase().includes(term) ||
+        log.action?.toLowerCase().includes(term);
+      if (!matchesSearch) return false;
+    }
+
+    if (actionFilter !== "All" && log.action !== actionFilter) {
+      return false;
+    }
+
+    if (debouncedFromDate && log.createdAt) {
+      const logDate = new Date(log.createdAt);
+      const from = new Date(debouncedFromDate);
+      from.setHours(0, 0, 0, 0);
+      if (logDate < from) return false;
+    }
+
+    if (debouncedToDate && log.createdAt) {
+      const logDate = new Date(log.createdAt);
+      const to = new Date(debouncedToDate);
+      to.setHours(23, 59, 59, 999);
+      if (logDate > to) return false;
+    }
+
+    return true;
   });
 
   const formatDate = (dateString) => {
@@ -206,10 +222,16 @@ const AuditLogs = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--theme-border)]">
-              {filteredLogs.length === 0 ? (
+              {logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-[var(--theme-text-muted)]">
                     No audit logs found.
+                  </td>
+                </tr>
+              ) : filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-[var(--theme-text-muted)]">
+                    No audit logs found matching your filters.
                   </td>
                 </tr>
               ) : (
@@ -265,12 +287,6 @@ const AuditLogs = () => {
             </tbody>
           </table>
         </div>
-
-        <Pagination
-          pagination={pagination}
-          onPageChange={setPage}
-          loading={loading}
-        />
       </div>
     </div>
   );

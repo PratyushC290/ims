@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { PackagePlus, Search, Loader2, X, Package, AlertTriangle, History as HistoryIcon, Plus, Edit2, CheckCircle, Eye, FileText, Download, Upload, FileUp } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
-import Pagination from "../components/Pagination";
+import { useDebounce } from "../hooks/useDebounce";
 import { exportCatalog, importCatalogFromExcel } from "../utils/exportUtils";
 
 const Inventory = () => {
@@ -28,8 +28,7 @@ const Inventory = () => {
   const [uploadingDocItem, setUploadingDocItem] = useState(null);
   const [docFile, setDocFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState(null);
-  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [assignForm, setAssignForm] = useState({
     userId: "",
     userName: "",
@@ -43,29 +42,31 @@ const Inventory = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (searchTerm) params.append("search", searchTerm);
-      params.append("page", page);
-      params.append("limit", 20);
-
-      const response = await api.get(`/items?${params.toString()}`);
+      const response = await api.get(`/items`);
       setItems(response.data.items || []);
-      setPagination(response.data.pagination);
     } catch (error) {
       toast.error("Failed to load inventory");
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, page, activeTab]);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   useEffect(() => {
-    setPage(1);
     setSearchTerm("");
   }, [activeTab]);
+
+  const filteredItems = items.filter((item) => {
+    if (!debouncedSearch) return true;
+    const term = debouncedSearch.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(term) ||
+      (item.category && item.category.toLowerCase().includes(term))
+    );
+  });
 
   const handleAddItem = async (e) => {
     e.preventDefault();
@@ -428,14 +429,14 @@ const Inventory = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--theme-border)]">
-            {items.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-[var(--theme-text-muted)]">
-                  No items in catalog. Add your first item!
+                  {items.length === 0 ? "No items in catalog. Add your first item!" : "No items found matching your search."}
                 </td>
               </tr>
             ) : (
-              items.map((item) => (
+              filteredItems.map((item) => (
                 <tr key={item._id} className="hover:bg-[var(--theme-bg)]">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -503,7 +504,6 @@ const Inventory = () => {
             )}
           </tbody>
         </table>
-        <Pagination pagination={pagination} onPageChange={setPage} loading={loading} />
       </div>
 
       {isAddModalOpen && (

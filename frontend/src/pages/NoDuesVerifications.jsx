@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDebounce } from "../hooks/useDebounce";
 import { Search, Loader2, Download, FileText, User, Calendar, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -17,11 +17,10 @@ const NoDuesVerifications = () => {
   const debouncedFromDate = useDebounce(fromDate, 300);
   const debouncedToDate = useDebounce(toDate, 300);
 
-  // Fetch all data once on load
   const fetchVerifications = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/no-dues/verifications?limit=5000");
+      const res = await api.get(`/no-dues/verifications`);
       setVerifications(res.data.verifications || []);
     } catch (error) {
       toast.error("Failed to load verifications");
@@ -34,38 +33,36 @@ const NoDuesVerifications = () => {
     fetchVerifications();
   }, [fetchVerifications]);
 
-  // Client-side filter
-  const filteredVerifications = useMemo(() => {
-    return verifications.filter((v) => {
-      const studentName = v.student?.fullname?.toLowerCase() || "";
-      const studentEmail = v.student?.instituteEmail?.toLowerCase() || "";
+  const filteredVerifications = verifications.filter((v) => {
+    if (!debouncedSearch) {
+    } else {
       const searchLower = debouncedSearch.toLowerCase();
-      const matchesSearch = !debouncedSearch || 
-        studentName.includes(searchLower) || 
-        studentEmail.includes(searchLower);
+      const matchesSearch =
+        v.student?.fullname?.toLowerCase().includes(searchLower) ||
+        v.student?.instituteEmail?.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
 
-      let matchesFromDate = true;
-      let matchesToDate = true;
+    if (debouncedFromDate && v.createdAt) {
+      const vDate = new Date(v.createdAt);
+      const from = new Date(debouncedFromDate);
+      from.setHours(0, 0, 0, 0);
+      if (vDate < from) return false;
+    }
 
-      if (debouncedFromDate && v.createdAt) {
-        const vDate = new Date(v.createdAt);
-        const from = new Date(debouncedFromDate);
-        from.setHours(0, 0, 0, 0);
-        matchesFromDate = vDate >= from;
-      }
+    if (debouncedToDate && v.createdAt) {
+      const vDate = new Date(v.createdAt);
+      const to = new Date(debouncedToDate);
+      to.setHours(23, 59, 59, 999);
+      if (vDate > to) return false;
+    }
 
-      if (debouncedToDate && v.createdAt) {
-        const vDate = new Date(v.createdAt);
-        const to = new Date(debouncedToDate);
-        to.setHours(23, 59, 59, 999);
-        matchesToDate = vDate <= to;
-      }
+    return true;
+  });
 
-      return matchesSearch && matchesFromDate && matchesToDate;
-    });
-  }, [verifications, debouncedSearch, debouncedFromDate, debouncedToDate]);
-
-  const applyFilters = () => {}; // No-op since filtering is automatic
+  const applyFilters = () => {
+    fetchVerifications();
+  };
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this verification?")) return;
@@ -208,13 +205,22 @@ const NoDuesVerifications = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--theme-border)]">
-              {filteredVerifications.length === 0 ? (
+              {verifications.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
                     className="py-8 text-center text-[var(--theme-text-muted)]"
                   >
                     No verifications found
+                  </td>
+                </tr>
+              ) : filteredVerifications.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-8 text-center text-[var(--theme-text-muted)]"
+                  >
+                    No verifications found matching your filters
                   </td>
                 </tr>
               ) : (
@@ -271,10 +277,6 @@ const NoDuesVerifications = () => {
               )}
             </tbody>
           </table>
-        </div>
-
-        <div className="px-6 py-4 border-t border-[var(--theme-border)] text-sm text-[var(--theme-text-muted)]">
-          Showing {filteredVerifications.length} of {verifications.length} records
         </div>
       </div>
     </div>

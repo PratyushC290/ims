@@ -126,10 +126,6 @@ export const verifyNoDues = async (req, res) => {
 
 export const getNoDuesVerifications = async (req, res) => {
   try {
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
-    const skip = (page - 1) * limit;
-
     const { search, fromDate, toDate } = req.query;
 
     const query = {};
@@ -144,21 +140,15 @@ export const getNoDuesVerifications = async (req, res) => {
       }
     }
 
-    const [verifications, total] = await Promise.all([
-      NoDuesVerification.find(query)
-        .populate("student", "fullname instituteEmail")
-        .populate("verifiedBy", "fullname")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      NoDuesVerification.countDocuments(query),
-    ]);
+    let verifications = await NoDuesVerification.find(query)
+      .populate("student", "fullname instituteEmail")
+      .populate("verifiedBy", "fullname")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    let filteredVerifications = verifications;
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredVerifications = verifications.filter(
+      verifications = verifications.filter(
         (v) =>
           v.student?.fullname?.toLowerCase().includes(searchLower) ||
           v.student?.instituteEmail?.toLowerCase().includes(searchLower)
@@ -166,12 +156,7 @@ export const getNoDuesVerifications = async (req, res) => {
     }
 
     res.status(200).json({
-      verifications: filteredVerifications,
-      pagination: {
-        totalVerifications: total,
-        totalPages: Math.ceil(total / limit),
-        currentPage: page,
-      },
+      verifications,
     });
   } catch (error) {
     console.error("Get NoDues Error:", error);
