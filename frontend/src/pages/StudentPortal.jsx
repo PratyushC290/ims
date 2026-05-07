@@ -11,6 +11,7 @@ const StudentPortal = () => {
   const [loading, setLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [userProfile, setUserProfile] = useState({});
+  const [fullUser, setFullUser] = useState(null);
   const [requestToPrint, setRequestToPrint] = useState(null);
 
   useEffect(() => {
@@ -35,11 +36,25 @@ const StudentPortal = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [issuedRes, requestsRes, catalogRes] = await Promise.all([
+      const userId = getCurrentUserId();
+      
+      const promises = [
         api.get("/items/my-issued"),
         api.get("/requests/my-requests"),
         api.get("/items"),
-      ]);
+      ];
+      
+      if (userId) {
+        promises.push(api.get(`/users/${userId}`));
+      }
+
+      const results = await Promise.all(promises);
+      const issuedRes = results[0];
+      const requestsRes = results[1];
+      
+      if (userId && results[3]) {
+        setFullUser(results[3].data);
+      }
 
       const issued = issuedRes.data.issuedAssets || [];
       setIssuedItems(issued);
@@ -87,7 +102,7 @@ const StudentPortal = () => {
       />
 
       <div id="print-root" className="hidden print:block absolute top-0 left-0 w-full min-h-screen bg-white z-[9999]">
-        <PrintableRequest request={requestToPrint} />
+        <PrintableRequest request={requestToPrint} currentUser={fullUser} />
       </div>
 
       <div className="mb-8">

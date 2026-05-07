@@ -1,6 +1,6 @@
 import React from "react";
 
-const PrintableRequest = ({ request }) => {
+const PrintableRequest = ({ request, currentUser }) => {
   if (!request) return null;
 
   const dateStr = new Date(request.createdAt).toLocaleDateString("en-US", {
@@ -10,7 +10,9 @@ const PrintableRequest = ({ request }) => {
   });
 
   // Try to safely access nested user details since the API may populate it
-  const user = request.user || {};
+  // Fall back to currentUser if request.user is just an ID (newly created request) or missing fields
+  const isUserPopulated = request.user && typeof request.user === 'object' && request.user.fullname;
+  const user = isUserPopulated ? request.user : (currentUser || {});
 
   return (
     <div className="bg-white text-black p-8 max-w-4xl mx-auto printable-document">
