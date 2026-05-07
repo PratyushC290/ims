@@ -23,15 +23,18 @@ const RequestModal = ({ isOpen, onClose, onSuccess, userRole = "Student" }) => {
   };
 
   const allowedItems = getAllowedItems();
+  const isFreeTextRole = ["Staff", "Admin", "Super Admin"].includes(userRole);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate items against role restrictions
-    for (const item of items) {
-      if (item.itemType && !allowedItems.includes(item.itemType)) {
-        toast.error(`You can only request: ${allowedItems.join(", ")}`);
-        return;
+    if (!isFreeTextRole) {
+      for (const item of items) {
+        if (item.itemType && !allowedItems.includes(item.itemType)) {
+          toast.error(`You can only request: ${allowedItems.join(", ")}`);
+          return;
+        }
       }
     }
 
@@ -109,7 +112,10 @@ const RequestModal = ({ isOpen, onClose, onSuccess, userRole = "Student" }) => {
           <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
             <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-amber-600">
-              You can request: <strong>{allowedItems.join(", ")}</strong>
+              {isFreeTextRole 
+                ? "You can request any hardware item. Please specify clearly."
+                : <span>You can request: <strong>{allowedItems.join(", ")}</strong></span>
+              }
             </p>
           </div>
           <div className="space-y-3">
@@ -119,16 +125,26 @@ const RequestModal = ({ isOpen, onClose, onSuccess, userRole = "Student" }) => {
             {items.map((item, index) => (
               <div key={index} className="flex gap-2 items-start bg-[var(--theme-bg)] p-3 rounded-xl border border-[var(--theme-border)]">
                 <div className="flex-1">
-                  <select
-                    value={item.itemType}
-                    onChange={(e) => updateItem(index, "itemType", e.target.value)}
-                    className="w-full px-3 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                  >
-                    <option value="">Select hardware...</option>
-                    {allowedItems.map((hw) => (
-                      <option key={hw} value={hw}>{hw}</option>
-                    ))}
-                  </select>
+                  {isFreeTextRole ? (
+                    <input
+                      type="text"
+                      value={item.itemType}
+                      onChange={(e) => updateItem(index, "itemType", e.target.value)}
+                      placeholder="Enter hardware name..."
+                      className="w-full px-3 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  ) : (
+                    <select
+                      value={item.itemType}
+                      onChange={(e) => updateItem(index, "itemType", e.target.value)}
+                      className="w-full px-3 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    >
+                      <option value="">Select hardware...</option>
+                      {allowedItems.map((hw) => (
+                        <option key={hw} value={hw}>{hw}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button

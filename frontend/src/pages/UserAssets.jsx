@@ -17,6 +17,20 @@ const UserAssets = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [expandedUser, setExpandedUser] = useState(null);
+  const [departmentFilter, setDepartmentFilter] = useState("All");
+
+  const DEPARTMENTS = [
+    "Chemical & Biochemical Engineering",
+    "Chemistry",
+    "Civil & Environmental Engineering",
+    "Computer Science and Engineering",
+    "Electrical Engineering",
+    "Humanities & Social Sciences",
+    "Mathematics",
+    "Mechanical Engineering",
+    "Metallurgical and Materials Engineering",
+    "Physics"
+  ];
 
   useEffect(() => {
     fetchData();
@@ -65,13 +79,14 @@ const UserAssets = () => {
 
   const filteredUsers = users.filter(user => {
     const matchesRole = roleFilter === "All" || user.role === roleFilter;
+    const matchesDepartment = departmentFilter === "All" || user.branch === departmentFilter;
     const matchesSearch = !searchTerm || 
       user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.instituteEmail.toLowerCase().includes(searchTerm.toLowerCase());
     const userItems = userIssuedMap[user._id] || [];
     const hasItems = userItems.length > 0;
     const matchesItemsFilter = !showUsersWithItems || hasItems;
-    return matchesRole && matchesSearch && matchesItemsFilter;
+    return matchesRole && matchesSearch && matchesItemsFilter && matchesDepartment;
   });
 
   const handleExport = () => {
@@ -163,6 +178,19 @@ const UserAssets = () => {
           >
             {roles.map(role => (
               <option key={role} value={role}>{role === "All" ? "All Roles" : role}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-[var(--theme-text-muted)]" />
+          <select
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+            className="px-4 py-2.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[200px]"
+          >
+            <option value="All">All Departments</option>
+            {DEPARTMENTS.map(dept => (
+              <option key={dept} value={dept}>{dept}</option>
             ))}
           </select>
         </div>
