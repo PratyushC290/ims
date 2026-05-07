@@ -8,7 +8,6 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
   const [hardwareTypes, setHardwareTypes] = useState([]);
   const [fetchingTypes, setFetchingTypes] = useState(true);
   const [items, setItems] = useState([]);
-  const [htSearch, setHtSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState({});
   const [document, setDocument] = useState(null);
   const fileInputRef = useRef(null);
@@ -94,7 +93,6 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
     newItems[index].identifiers = [""];
     setItems(newItems);
     setSelectedItems({ ...selectedItems, [index]: item });
-    setHtSearch("");
   };
 
   const handleFulfill = async () => {
@@ -146,10 +144,6 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
 
   if (!isOpen || !request) return null;
 
-  const filteredTypes = hardwareTypes.filter(t => 
-    !htSearch || t.name.toLowerCase().includes(htSearch.toLowerCase())
-  );
-
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
@@ -191,16 +185,17 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
                     type="text"
                     placeholder="Search hardware type..."
                     value={item.itemType}
-                    onChange={(e) => {
-                      updateItemType(idx, e.target.value);
-                      setHtSearch(e.target.value);
-                    }}
+                    onChange={(e) => updateItemType(idx, e.target.value)}
                     className="w-full px-3 py-1.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm"
                   />
                   {item.itemType && !selectedItems[idx] && (
                     <div className="mt-1 max-h-32 overflow-y-auto border border-[var(--theme-border)] rounded-lg">
-                      {filteredTypes.length > 0 ? (
-                        filteredTypes.map(t => (
+                      {hardwareTypes.filter(t => 
+                        t.name.toLowerCase().includes(item.itemType.toLowerCase())
+                      ).length > 0 ? (
+                        hardwareTypes.filter(t => 
+                          t.name.toLowerCase().includes(item.itemType.toLowerCase())
+                        ).map(t => (
                           <div
                             key={t._id}
                             onClick={() => handleSelectItemType(idx, t)}
