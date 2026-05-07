@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDebounce } from "../hooks/useDebounce";
-import { Search, Clock, CheckCircle, XCircle, FileText, Filter, Loader2, Package, User, Calendar, ChevronDown } from "lucide-react";
+import { Search, Clock, CheckCircle, XCircle, FileText, Filter, Loader2, Package, User, Calendar, ChevronDown, Eye, UploadCloud } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import FulfillModal from "../components/FulfillModal";
@@ -16,6 +16,10 @@ const Requests = () => {
   const [showRejectModal, setShowRejectModal] = useState({ isOpen: false, requestId: null });
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
+  const [showAddDocModal, setShowAddDocModal] = useState({ isOpen: false, requestId: null });
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const fileInputRef = useRef(null);
   const [requestToPrint, setRequestToPrint] = useState(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -66,6 +70,45 @@ const Requests = () => {
 
   const handleOpenReject = (requestId) => {
     setShowRejectModal({ isOpen: true, requestId });
+  };
+
+  const handleOpenAddDoc = (requestId) => {
+    setShowAddDocModal({ isOpen: true, requestId });
+    setSelectedDoc(null);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      setSelectedDoc(file);
+    } else {
+      toast.error("Please upload a valid PDF file");
+      e.target.value = null;
+    }
+  };
+
+  const handleAddDocument = async () => {
+    if (!selectedDoc) {
+      toast.error("Please select a PDF file");
+      return;
+    }
+
+    try {
+      setUploadingDoc(true);
+      const formData = new FormData();
+      formData.append("document", selectedDoc);
+
+      await api.patch(`/requests/${showAddDocModal.requestId}/document`, formData);
+      
+      toast.success("Document attached successfully");
+      setShowAddDocModal({ isOpen: false, requestId: null });
+      setSelectedDoc(null);
+      fetchRequests();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to attach document");
+    } finally {
+      setUploadingDoc(false);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -127,6 +170,60 @@ const Requests = () => {
                 className="flex-1 py-3 bg-red-600 text-white rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {rejecting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddDocModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddDocModal({ isOpen: false, requestId: null })} />
+          <div className="relative bg-[var(--theme-panel)] rounded-3xl shadow-2xl max-w-md w-full p-6 border border-[var(--theme-border)]">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-blue-600/20 rounded-xl">
+                <UploadCloud className="h-5 w-5 text-blue-400" />
+              </div>
+              <h2 className="text-xl font-bold text-[var(--theme-text)]">Add PDF Document</h2>
+            </div>
+            
+            <div 
+              className="border-2 border-dashed border-[var(--theme-border)] rounded-xl p-6 text-center cursor-pointer hover:bg-[var(--theme-bg)] transition-colors mb-6"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              {selectedDoc ? (
+                <div className="flex flex-col items-center gap-2 text-green-500">
+                  <CheckCircle className="h-8 w-8" />
+                  <span className="text-sm font-medium">{selectedDoc.name}</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-[var(--theme-text-muted)]">
+                  <UploadCloud className="h-8 w-8 mb-1" />
+                  <span className="text-sm">Click to select a PDF</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAddDocModal({ isOpen: false, requestId: null })}
+                className="flex-1 py-3 bg-[var(--theme-bg)] text-[var(--theme-text)] rounded-xl font-semibold border border-[var(--theme-border)] hover:bg-[var(--theme-border)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddDocument}
+                disabled={uploadingDoc || !selectedDoc}
+                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {uploadingDoc ? <Loader2 className="h-5 w-5 animate-spin" /> : "Upload"}
               </button>
             </div>
           </div>
@@ -293,6 +390,25 @@ const Requests = () => {
                               Fulfill
                             </button>
                           </>
+                        )}
+                        {request.status === "Fulfilled" && (
+                          request.documentUrl ? (
+                            <button
+                              onClick={() => window.open(`http://localhost:3000${request.documentUrl}`, '_blank')}
+                              className="p-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors"
+                              title="View PDF"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenAddDoc(request._id)}
+                              className="p-2 bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 rounded-lg transition-colors"
+                              title="Add PDF"
+                            >
+                              <UploadCloud className="h-4 w-4" />
+                            </button>
+                          )
                         )}
                       </div>
                     </td>

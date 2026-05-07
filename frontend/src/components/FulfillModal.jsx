@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Loader2, CheckCircle, Package, Plus, Minus } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Loader2, CheckCircle, Package, Plus, Minus, UploadCloud, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 
@@ -10,6 +10,8 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
   const [items, setItems] = useState([]);
   const [htSearch, setHtSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState({});
+  const [document, setDocument] = useState(null);
+  const fileInputRef = useRef(null);
 
   const fetchHardwareTypes = async () => {
     try {
@@ -26,6 +28,7 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
   useEffect(() => {
     if (isOpen) {
       fetchHardwareTypes();
+      setDocument(null);
       if (request && request.items) {
         setItems(request.items.map(item => ({
           itemType: item.itemType,
@@ -35,6 +38,16 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
       }
     }
   }, [isOpen, request]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      setDocument(file);
+    } else {
+      toast.error("Please upload a valid PDF file");
+      e.target.value = null;
+    }
+  };
 
   const updateItemQuantity = (index, newQty) => {
     const qty = Math.max(0, parseInt(newQty) || 0);
@@ -111,10 +124,16 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
 
     try {
       setFulfilling(true);
-      await api.post(`/requests/${request._id}/fulfill`, { 
-        items: itemsWithId,
-        assignments 
-      });
+      
+      const formData = new FormData();
+      formData.append("items", JSON.stringify(itemsWithId));
+      formData.append("assignments", JSON.stringify(assignments));
+      
+      if (document) {
+        formData.append("document", document);
+      }
+
+      await api.post(`/requests/${request._id}/fulfill`, formData);
       toast.success("Request fulfilled successfully!");
       onSuccess();
     } catch (error) {
@@ -284,6 +303,37 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
             <Plus className="h-5 w-5" />
             Add Another Item
           </button>
+        </div>
+
+        {/* PDF Upload Section */}
+        <div className="mb-6 p-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl">
+          <label className="flex items-center gap-2 text-sm font-medium text-[var(--theme-text)] mb-2">
+            <FileText className="h-4 w-4 text-blue-500" />
+            Attach supporting document (Optional) - PDF only
+          </label>
+          <div 
+            className="border-2 border-dashed border-[var(--theme-border)] rounded-xl p-4 text-center cursor-pointer hover:bg-[var(--theme-panel)] transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            {document ? (
+              <div className="flex items-center justify-center gap-2 text-green-500">
+                <CheckCircle className="h-5 w-5" />
+                <span className="text-sm font-medium">{document.name}</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1 text-[var(--theme-text-muted)]">
+                <UploadCloud className="h-6 w-6 mb-1" />
+                <span className="text-sm">Click to select PDF</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2 border-t border-[var(--theme-border)]">

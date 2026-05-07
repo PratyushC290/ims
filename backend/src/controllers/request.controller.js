@@ -161,7 +161,15 @@ export const updateRequestStatus = async (req, res) => {
 export const fulfillRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { assignments, items: adminItems } = req.body;
+    let { assignments, items: adminItems } = req.body;
+
+    // Parse strings if sent via FormData
+    if (typeof assignments === 'string') {
+      assignments = JSON.parse(assignments);
+    }
+    if (typeof adminItems === 'string') {
+      adminItems = JSON.parse(adminItems);
+    }
 
     console.log("Backend fulfillRequest:", { adminItems, assignments });
 
@@ -267,6 +275,10 @@ export const fulfillRequest = async (req, res) => {
       await History.insertMany(historyLogs);
     }
 
+    if (req.file) {
+      request.documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+    }
+
     request.status = "Fulfilled";
     await request.save();
 
@@ -274,6 +286,31 @@ export const fulfillRequest = async (req, res) => {
       message: "Request fulfilled successfully.",
       request,
       fulfilledItems: itemsToFulfill,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const uploadRequestDocument = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const request = await Request.findById(requestId);
+
+    if (!request) {
+      return res.status(404).json({ message: "Request not found." });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No document provided." });
+    }
+
+    request.documentUrl = `/uploads/ims_returns/${req.file.filename}`;
+    await request.save();
+
+    res.status(200).json({
+      message: "Document attached successfully.",
+      request,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

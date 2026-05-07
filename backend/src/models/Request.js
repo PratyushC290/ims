@@ -37,6 +37,10 @@ const requestSchema = new Schema(
       enum: ["Pending", "Approved", "Rejected", "Fulfilled"],
       default: "Pending",
     },
+    documentUrl: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
