@@ -156,8 +156,6 @@ export const fulfillRequest = async (req, res) => {
       adminItems = JSON.parse(adminItems);
     }
 
-    console.log("Backend fulfillRequest:", { adminItems, assignments });
-
     // Support flexible fulfillment: admin-provided items OR fallback to request items
     const isFlexibleFulfillment = adminItems && Array.isArray(adminItems);
     
@@ -206,8 +204,6 @@ export const fulfillRequest = async (req, res) => {
       if (catalogItem.availableQuantity < quantity) {
         return res.status(400).json({ message: `Not enough stock available for ${catalogItem.name}. Available: ${catalogItem.availableQuantity}` });
       }
-
-      console.log("Validation for", itemType, ": quantity=", quantity, "identifiers=", identifiers, "length=", identifiers.length);
 
       if (identifiers.length === 0 || identifiers.length !== quantity) {
         return res.status(400).json({ message: `Must provide exactly ${quantity} identifier(s) for ${itemType}.` });
