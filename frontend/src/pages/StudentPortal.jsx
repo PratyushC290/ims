@@ -267,6 +267,24 @@ const StudentPortal = () => {
           )}
         </div>
       </div>
+
+      {myRequests.some(request => request.status === "Pending") && (
+        <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-gradient-to-r from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-3xl p-6 shadow-sm flex items-center gap-6">
+            <div className="w-14 h-14 bg-amber-500/20 rounded-2xl flex items-center justify-center shrink-0">
+              <Clock className="h-7 w-7 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-amber-500 mb-1">
+                Pending Request Instructions
+              </h3>
+              <p className="text-amber-500/90 text-lg">
+                Please get all the required signatures in the above form and report to the CC Office
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

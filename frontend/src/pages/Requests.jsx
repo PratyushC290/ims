@@ -4,7 +4,6 @@ import { Search, Clock, CheckCircle, XCircle, FileText, Filter, Loader2, Package
 import toast from "react-hot-toast";
 import api from "../api";
 import FulfillModal from "../components/FulfillModal";
-import PrintableRequest from "../components/PrintableRequest";
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -20,7 +19,6 @@ const Requests = () => {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const fileInputRef = useRef(null);
-  const [requestToPrint, setRequestToPrint] = useState(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
@@ -130,10 +128,6 @@ const Requests = () => {
 
   return (
     <div>
-      <div id="print-root" className="hidden print:block absolute top-0 left-0 w-full min-h-screen bg-white z-[9999]">
-        <PrintableRequest request={requestToPrint} />
-      </div>
-
       <FulfillModal
         isOpen={showFulfillModal}
         onClose={() => {
@@ -371,16 +365,6 @@ const Requests = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setRequestToPrint(request);
-                            setTimeout(() => window.print(), 100);
-                          }}
-                          className="px-3 py-1.5 border border-[var(--theme-border)] text-[var(--theme-text)] rounded-lg font-medium hover:bg-[var(--theme-bg)] transition-colors text-xs flex items-center gap-1.5"
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                          Print
-                        </button>
                         {activeTab === "pending" && (
                           <>
                             <button
