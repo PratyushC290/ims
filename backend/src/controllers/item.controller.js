@@ -237,6 +237,55 @@ export const returnAsset = async (req, res) => {
   }
 };
 
+export const returnAllAssets = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const notes = req.body?.notes || "Returned all via No Dues";
+
+    const issuedAssets = await IssuedAsset.find({ user: userId, status: "Issued" }).populate("catalogItem");
+    
+    if (issuedAssets.length === 0) {
+      return res.status(400).json({ message: "No issued assets found for this user." });
+    }
+
+    const returnedItemsList = [];
+
+    for (const issuedAsset of issuedAssets) {
+      const catalogItem = await Item.findById(issuedAsset.catalogItem._id);
+      if (catalogItem) {
+        catalogItem.availableQuantity += 1;
+        await catalogItem.save();
+      }
+
+      issuedAsset.status = "Returned";
+      issuedAsset.returnedAt = new Date();
+      await issuedAsset.save();
+
+      await History.create({
+        item: issuedAsset.catalogItem._id,
+        action: "Returned",
+        targetUser: issuedAsset.user,
+        authorizedBy: req.user.userId,
+        notes: `${issuedAsset.identifier} - ${notes}`,
+      });
+
+      // To make it easy to display in the certificate, add catalogItem details
+      returnedItemsList.push({
+        ...issuedAsset.toObject(),
+        catalogItem: catalogItem ? catalogItem.toObject() : issuedAsset.catalogItem
+      });
+    }
+
+    res.status(200).json({
+      message: `All ${issuedAssets.length} assets returned successfully.`,
+      returnedAssets: returnedItemsList,
+    });
+  } catch (error) {
+    console.error("Return All Assets Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 export const getIssuedAssets = async (req, res) => {
   try {
     const { userId, itemId, status } = req.query;
