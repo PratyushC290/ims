@@ -165,7 +165,7 @@ const Inventory = () => {
 
   const handleAssignItem = async (e) => {
     e.preventDefault();
-    
+
     if (!assignForm.userId) {
       toast.error("Please select a user");
       return;
@@ -181,13 +181,13 @@ const Inventory = () => {
       const qty = parseInt(item.quantity) || 0;
       const idLen = item.identifiers?.length || 0;
       console.log(`Item ${i}: hw=${item.hardwareType}, qty=${qty} (type:${typeof qty}), ids=${idLen}`);
-      
+
       if (item.hardwareType && qty > 0) {
         if (idLen < qty) {
           toast.error(`${item.hardwareType}: need ${qty} identifier(s), got ${idLen}`);
           return;
         }
-        
+
         itemsToSubmit.push({
           hardwareType: item.hardwareType,
           quantity: qty,
@@ -287,11 +287,10 @@ const Inventory = () => {
         <div className="flex items-center gap-2 p-1 bg-[var(--theme-bg)] rounded-xl border border-[var(--theme-border)]">
           <button
             onClick={() => setActiveTab("catalog")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "catalog"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "catalog"
                 ? "bg-[var(--theme-panel)] text-[var(--theme-text)] shadow-sm"
                 : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
-            }`}
+              }`}
           >
             <Package className="h-4 w-4" />
             Catalog
@@ -304,7 +303,7 @@ const Inventory = () => {
           <Plus className="h-4 w-4" />
           Assign Item
         </button>
-</div>
+      </div>
 
       <div className="bg-[var(--theme-panel)] rounded-2xl shadow-sm border border-[var(--theme-border)] p-4">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
@@ -531,15 +530,15 @@ const Inventory = () => {
                   />
                 </div>
                 <div className="mt-2 max-h-32 overflow-y-auto border border-[var(--theme-border)] rounded-xl">
-                  {users.filter(u => 
-                    !assignUserSearch || 
+                  {users.filter(u =>
+                    !assignUserSearch ||
                     u.fullname.toLowerCase().includes(assignUserSearch.toLowerCase()) ||
                     u.instituteEmail.toLowerCase().includes(assignUserSearch.toLowerCase())
                   ).length === 0 ? (
                     <div className="p-3 text-sm text-[var(--theme-text-muted)]">No users found</div>
                   ) : (
-                    users.filter(u => 
-                      !assignUserSearch || 
+                    users.filter(u =>
+                      !assignUserSearch ||
                       u.fullname.toLowerCase().includes(assignUserSearch.toLowerCase()) ||
                       u.instituteEmail.toLowerCase().includes(assignUserSearch.toLowerCase())
                     ).slice(0, 5).map((user) => (
@@ -549,9 +548,8 @@ const Inventory = () => {
                           setAssignForm({ ...assignForm, userId: user._id, userName: user.fullname });
                           setAssignUserSearch(user.fullname);
                         }}
-                        className={`p-3 cursor-pointer hover:bg-[var(--theme-bg)] border-b border-[var(--theme-border)] last:border-0 ${
-                          assignForm.userId === user._id ? "bg-blue-500/10" : ""
-                        }`}
+                        className={`p-3 cursor-pointer hover:bg-[var(--theme-bg)] border-b border-[var(--theme-border)] last:border-0 ${assignForm.userId === user._id ? "bg-blue-500/10" : ""
+                          }`}
                       >
                         <div className="font-medium text-[var(--theme-text)]">{user.fullname}</div>
                         <div className="text-xs text-[var(--theme-text-muted)]">{user.instituteEmail}</div>
@@ -579,16 +577,15 @@ const Inventory = () => {
                         </div>
                         {!assignItemsSelected[index]?._id && (
                           <div className="max-h-32 overflow-y-auto border border-[var(--theme-border)] rounded-lg">
-                            {catalogItems.filter(i => 
-                              !item.hardwareType || 
+                            {catalogItems.filter(i =>
+                              !item.hardwareType ||
                               i.name.toLowerCase().includes(item.hardwareType.toLowerCase())
                             ).map((catItem) => (
                               <div
                                 key={catItem._id}
                                 onClick={() => handleSelectAssignItem(index, catItem)}
-                                className={`p-2 cursor-pointer hover:bg-[var(--theme-panel)] border-b border-[var(--theme-border)] last:border-0 flex justify-between ${
-                                  item.hardwareType === catItem.name ? "bg-blue-500/10" : ""
-                                }`}
+                                className={`p-2 cursor-pointer hover:bg-[var(--theme-panel)] border-b border-[var(--theme-border)] last:border-0 flex justify-between ${item.hardwareType === catItem.name ? "bg-blue-500/10" : ""
+                                  }`}
                               >
                                 <span className="font-medium text-[var(--theme-text)] text-sm">{catItem.name}</span>
                                 <span className={`text-xs ${catItem.availableQuantity > 0 ? "text-green-500" : "text-red-500"}`}>
@@ -637,22 +634,22 @@ const Inventory = () => {
                         </button>
                       )}
                     </div>
-                    
+
                     <div className="mt-2 pt-2 border-t border-[var(--theme-border)]">
                       <label className="block text-xs font-medium text-[var(--theme-text-muted)] mb-1">
                         Serial Numbers (required)
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         {item.identifiers.map((id, idIndex) => (
-                        <input
-                          key={idIndex}
-                          type="text"
-                          placeholder={`Serial #${idIndex + 1}`}
-                          value={id}
-                          onChange={(e) => updateAssignIdentifier(index, idIndex, e.target.value)}
-                          className="w-full px-3 py-1.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-lg text-sm"
-                        />
-                      ))}
+                          <input
+                            key={idIndex}
+                            type="text"
+                            placeholder={`Serial #${idIndex + 1}`}
+                            value={id}
+                            onChange={(e) => updateAssignIdentifier(index, idIndex, e.target.value)}
+                            className="w-full px-3 py-1.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-lg text-sm"
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>

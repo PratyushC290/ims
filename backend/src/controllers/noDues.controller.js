@@ -1,6 +1,67 @@
 import { NoDuesVerification } from "../models/NoDuesVerification.js";
 import { IssuedAsset } from "../models/IssuedAsset.js";
 import { User } from "../models/User.js";
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+  service: process.env.EMAIL_SERVICE,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+const sendNoDuesNotificationEmail = async (student, verification, adminName) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: process.env.NO_DUES_NOTIFICATION_EMAIL,
+    subject: `No Dues Certificate Generated - ${student.fullname}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="border: 2px solid #000; border-radius: 8px; padding: 24px;">
+          <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 16px; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #000;">Inventory Management System</h2>
+            <h3 style="margin: 8px 0 0; color: #333;">No Dues Certificate</h3>
+          </div>
+
+          <p style="color: #666; text-align: right; margin-bottom: 16px;">
+            Date: ${new Date(verification.createdAt).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+
+          <div style="margin-bottom: 20px;">
+            <p style="margin: 8px 0;"><strong>Name:</strong> ${student.fullname}</p>
+            <p style="margin: 8px 0;"><strong>Roll Number:</strong> ${student.studentId || "N/A"}</p>
+            <p style="margin: 8px 0;"><strong>Institute Email:</strong> ${student.instituteEmail}</p>
+            <p style="margin: 8px 0;"><strong>Department:</strong> ${student.branch || student.role || "N/A"}</p>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <p style="line-height: 1.6;">
+              This is to certify that <strong>${student.fullname}</strong> has returned all issued hardware 
+              and has no pending dues towards the department. All items assigned to this student have been properly 
+              accounted for and returned in good condition.
+            </p>
+          </div>
+
+          <div style="border-top: 2px solid #000; padding-top: 20px; margin-top: 24px;">
+            <p style="margin: 8px 0;"><strong>Verification Status:</strong> ${verification.status}</p>
+            <p style="margin: 8px 0;"><strong>Digitally Signed by:</strong> ${adminName}</p>
+            <p style="margin: 8px 0;"><strong>Verification Date:</strong> ${new Date(verification.createdAt).toLocaleDateString("en-GB").replace(/\//g, "-")}</p>
+            <p style="margin: 8px 0;"><strong>Verification Time:</strong> ${new Date(verification.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</p>
+          </div>
+
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #ccc; text-align: center;">
+            <p style="color: #888; font-size: 12px; margin: 0;">
+              IMS - Inventory Management System | Generated on ${new Date().toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
 
 export const verifyNoDues = async (req, res) => {
   try {
@@ -37,6 +98,15 @@ export const verifyNoDues = async (req, res) => {
     });
 
     await verification.save();
+
+    const admin = await User.findById(req.user.userId);
+    const adminName = admin?.fullname || "Admin";
+
+    if (process.env.NO_DUES_NOTIFICATION_EMAIL) {
+      sendNoDuesNotificationEmail(student, verification, adminName).catch((err) => {
+        console.error("Failed to send NoDues notification email:", err);
+      });
+    }
 
     res.status(201).json({
       message: "Verification saved",
