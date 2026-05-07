@@ -462,7 +462,7 @@ const Inventory = () => {
                       {(item.documentFileId || item.documentUrl) ? (
                         <button
                           onClick={() => handleViewDocument(item)}
-                          className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
+                          className="p-2 hover:bg-purple-500/10 rounded-lg transition-colors"
                           title="View Document"
                         >
                           <Eye className="h-4 w-4 text-purple-500" />
@@ -470,7 +470,7 @@ const Inventory = () => {
                       ) : (
                         <button
                           onClick={() => handleUploadDocClick(item)}
-                          className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
+                          className="p-2 hover:bg-orange-500/10 rounded-lg transition-colors"
                           title="Upload PDF"
                         >
                           <FileUp className="h-4 w-4 text-orange-500" />
@@ -478,21 +478,21 @@ const Inventory = () => {
                       )}
                       <button
                         onClick={() => handleViewHistory(item)}
-                        className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
+                        className="p-2 hover:bg-gray-500/10 rounded-lg transition-colors"
                         title="View History"
                       >
                         <HistoryIcon className="h-4 w-4 text-[var(--theme-text-muted)]" />
                       </button>
                       <button
                         onClick={() => openEditModal(item)}
-                        className="p-2 hover:bg-[var(--theme-bg)] rounded-lg"
+                        className="p-2 hover:bg-blue-500/10 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit2 className="h-4 w-4 text-blue-500" />
                       </button>
                       <button
                         onClick={() => handleDeleteItem(item._id)}
-                        className="p-2 hover:bg-red-500/10 rounded-lg"
+                        className="p-2 hover:bg-red-500/10 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <AlertTriangle className="h-4 w-4 text-red-500" />

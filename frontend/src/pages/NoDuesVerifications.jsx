@@ -60,10 +60,6 @@ const NoDuesVerifications = () => {
     return true;
   });
 
-  const applyFilters = () => {
-    fetchVerifications();
-  };
-
   const handleDelete = async (id) => {
     if (!confirm("Delete this verification?")) return;
     try {
@@ -168,12 +164,7 @@ const NoDuesVerifications = () => {
               onChange={(e) => setToDate(e.target.value)}
               className="px-3 py-2 bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
-            <button
-              onClick={applyFilters}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
-              Apply
-            </button>
+
           </div>
         </div>
 
