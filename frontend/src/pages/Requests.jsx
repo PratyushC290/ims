@@ -32,7 +32,14 @@ const Requests = () => {
       setLoading(true);
       const statusFilter = activeTab === "pending" ? "Pending" : activeTab === "history" ? "Rejected,Fulfilled" : "";
       const res = await api.get(`/requests/all?${statusFilter ? `status=${statusFilter}&` : ''}search=${debouncedSearchTerm}`);
-      setRequests(res.data.requests);
+      
+      const sortedRequests = res.data.requests.sort((a, b) => {
+        if (activeTab === "history") {
+          return new Date(b.updatedAt) - new Date(a.updatedAt);
+        }
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      });
+      setRequests(sortedRequests);
     } catch (error) {
       toast.error("Failed to fetch requests");
     } finally {

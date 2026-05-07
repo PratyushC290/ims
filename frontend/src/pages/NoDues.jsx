@@ -243,7 +243,6 @@ const NoDues = () => {
                     <div className="h-20"></div>
                     <div className="w-48 border-b-2 border-black mb-2"></div>
                     <p className="text-black text-sm font-semibold">Signature of Student</p>
-                    <p className="text-black text-xs">Date: ________________</p>
                   </div>
                   <div className="text-center flex flex-col items-center justify-end">
                     <div className="h-20 flex items-end justify-center mb-1 w-full">
@@ -261,7 +260,6 @@ const NoDues = () => {
                     </div>
                     <div className="w-48 border-b-2 border-black mb-2"></div>
                     <p className="text-black text-sm font-semibold">Verified By</p>
-                    <p className="text-black text-xs">Date: ________________</p>
                   </div>
                 </div>
 
