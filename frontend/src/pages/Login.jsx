@@ -49,13 +49,13 @@ const Login = () => {
     // The soft, sky-like gradient background
     <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-sky-100 via-blue-50 to-white">
       {/* The Frosted Glass Card */}
-      <div className="max-w-md w-full bg-white/60 backdrop-blur-xl rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-10 border border-white/80 transition-all duration-500">
+      <div className="max-w-xl w-full bg-white/60 backdrop-blur-xl rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-14 border border-white/80 transition-all duration-500">
         {/* Header Section */}
         <div className="text-center mb-10">
-          <div className="mx-auto h-20 w-20 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 overflow-hidden">
-            <img src="/iitp-logo.png" alt="IITP" className="h-16 w-16 object-contain" />
+          <div className="mx-auto h-32 w-32 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 overflow-hidden">
+            <img src="/iitp-logo.png" alt="IITP" className="h-28 w-28 object-contain" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-4xl font-bold text-gray-900">
             {step === 1 ? "IIT Patna CC Office Inventory" : "Enter Security Code"}
           </h2>
         </div>

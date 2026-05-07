@@ -109,13 +109,16 @@ const StudentPortal = () => {
 
       <div className="mb-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--theme-text)]">
-              Welcome back, {userProfile.fullname?.split(' ')[0] || fullUser?.role || 'User'}!
-            </h1>
-            <p className="text-[var(--theme-text-muted)] mt-1">
-              Manage your assets and requests from here
-            </p>
+          <div className="flex items-center gap-5">
+            <img src="/iitp-logo.png" alt="IITP" className="h-20 w-20 object-contain rounded-xl bg-white p-1.5" />
+            <div>
+              <h1 className="text-4xl font-bold text-[var(--theme-text)]">
+                Welcome back, {userProfile.fullname?.split(' ')[0] || fullUser?.role || 'User'}!
+              </h1>
+              <p className="text-[var(--theme-text-muted)] mt-1 text-lg">
+                IIT Patna CC Office Inventory
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setShowRequestModal(true)}
