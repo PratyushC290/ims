@@ -11,6 +11,7 @@ const NoDues = () => {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [returning, setReturning] = useState(null);
+  const [recentlyReturnedItems, setRecentlyReturnedItems] = useState([]);
 
   const fetchUsers = async () => {
     try {
@@ -40,6 +41,7 @@ const NoDues = () => {
     try {
       setSearching(true);
       setStudent(user);
+      setRecentlyReturnedItems([]);
       const issuedRes = await api.get(`/items/user/${user._id}/issued`);
       setItems(issuedRes.data.issuedAssets || []);
     } catch (error) {
@@ -49,16 +51,17 @@ const NoDues = () => {
     }
   };
 
-  const handleReturnItem = async (item) => {
-    if (!confirm(`Return ${item.identifier}?`)) return;
+  const handleReturnAll = async () => {
+    if (!confirm(`Return all pending items for ${student.fullname}?`)) return;
     try {
-      setReturning(item._id);
-      await api.put(`/items/return/${item._id}`);
-      toast.success("Item returned successfully");
+      setReturning("all");
+      const res = await api.put(`/items/user/${student._id}/return-all`);
+      setRecentlyReturnedItems(res.data.returnedAssets || []);
+      toast.success("All items returned successfully");
       const issuedRes = await api.get(`/items/user/${student._id}/issued`);
       setItems(issuedRes.data.issuedAssets || []);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to return item");
+      toast.error(error.response?.data?.message || "Failed to return items");
     } finally {
       setReturning(null);
     }
@@ -158,7 +161,10 @@ const NoDues = () => {
       ) : (
         <div>
           <button
-            onClick={() => setStudent(null)}
+            onClick={() => {
+              setStudent(null);
+              setRecentlyReturnedItems([]);
+            }}
             className="flex items-center gap-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] mb-4 no-print"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -198,6 +204,30 @@ const NoDues = () => {
                   </p>
                 </div>
 
+                {recentlyReturnedItems.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="font-semibold text-black mb-3">Items Returned:</h4>
+                    <table className="w-full border-collapse border border-gray-400 text-sm">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-400 p-2 text-left">S.No</th>
+                          <th className="border border-gray-400 p-2 text-left">Item Name</th>
+                          <th className="border border-gray-400 p-2 text-left">Identifier</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentlyReturnedItems.map((item, idx) => (
+                          <tr key={item._id}>
+                            <td className="border border-gray-400 p-2 text-black">{idx + 1}</td>
+                            <td className="border border-gray-400 p-2 text-black">{item.catalogItem?.name || "Unknown Item"}</td>
+                            <td className="border border-gray-400 p-2 text-black">{item.identifier}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
                 <div className="flex justify-between pt-8">
                   <div className="text-center">
                     <div className="w-48 border-b-2 border-black mb-2"></div>
@@ -220,11 +250,25 @@ const NoDues = () => {
             </div>
           ) : (
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <XCircle className="h-6 w-6 text-red-500" />
-                <h3 className="text-xl font-bold text-red-500">
-                  {items.length} Item{items.length !== 1 ? 's' : ''} Pending Return
-                </h3>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <XCircle className="h-6 w-6 text-red-500" />
+                  <h3 className="text-xl font-bold text-red-500">
+                    {items.length} Item{items.length !== 1 ? 's' : ''} Pending Return
+                  </h3>
+                </div>
+                <button
+                  onClick={handleReturnAll}
+                  disabled={returning === "all"}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors"
+                >
+                  {returning === "all" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" />
+                  )}
+                  Return All Items
+                </button>
               </div>
                     
               <div className="space-y-3">
@@ -244,18 +288,6 @@ const NoDues = () => {
                       <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
                         {item.status}
                       </span>
-                      <button
-                        onClick={() => handleReturnItem(item)}
-                        disabled={returning === item._id}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 disabled:opacity-50"
-                      >
-                        {returning === item._id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <RotateCcw className="h-3 w-3" />
-                        )}
-                        Return
-                      </button>
                     </div>
                   </div>
                 ))}

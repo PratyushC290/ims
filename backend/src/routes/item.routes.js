@@ -4,7 +4,7 @@ import {
   issueAsset, returnAsset, getIssuedAssets, getItemHistory,
   deleteItem, createBulkItems, getAllIssued,
   undoAction, getUserIssuedItems,
-  assignAsset, getUserIssuedItemsById
+  assignAsset, getUserIssuedItemsById, returnAllAssets
 } from "../controllers/item.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 
@@ -26,6 +26,7 @@ router.put("/:itemId", updateItem);
 router.put("/:itemId/stock", updateItemStock);
 router.put("/:itemId/issue", issueAsset);
 router.put("/return/:issuedAssetId", returnAsset);
+router.put("/user/:userId/return-all", returnAllAssets);
 
 router.delete("/:itemId", deleteItem);
 
