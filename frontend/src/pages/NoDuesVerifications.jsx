@@ -60,6 +60,18 @@ const NoDuesVerifications = () => {
     return true;
   });
 
+  // Calculate role-based summary from filtered verifications
+  const summaryCounts = {
+    student: verifications.filter(v => v.student?.role === "Student").length,
+    faculty: verifications.filter(v => v.student?.role === "Faculty").length,
+    staff: verifications.filter(v => v.student?.role === "Staff").length,
+  };
+  const filteredSummaryCounts = {
+    student: filteredVerifications.filter(v => v.student?.role === "Student").length,
+    faculty: filteredVerifications.filter(v => v.student?.role === "Faculty").length,
+    staff: filteredVerifications.filter(v => v.student?.role === "Staff").length,
+  };
+
   const handleDelete = async (id) => {
     if (!confirm("Delete this verification?")) return;
     try {
@@ -80,8 +92,8 @@ const NoDuesVerifications = () => {
         
         return {
           Date: v.createdAt ? new Date(v.createdAt).toLocaleString() : "N/A",
-          "Student Name": v.student?.fullname || "Unknown",
-          "Student Email": v.student?.instituteEmail || "N/A",
+          "User Name": v.student?.fullname || "Unknown",
+          "User Email": v.student?.instituteEmail || "N/A",
           Status: v.status,
           "Pending Items": v.pendingCount || 0,
           "Verified By": v.verifiedBy?.fullname || "Unknown",
@@ -144,6 +156,26 @@ const NoDuesVerifications = () => {
         </button>
       </div>
 
+      {/* Summary Cards - shows filtered results */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-[var(--theme-panel)] rounded-2xl p-4 border border-[var(--theme-border)]">
+          <p className="text-sm text-[var(--theme-text-muted)]">Students</p>
+          <p className="text-2xl font-bold text-[var(--theme-text)]">{filteredSummaryCounts.student}</p>
+        </div>
+        <div className="bg-[var(--theme-panel)] rounded-2xl p-4 border border-[var(--theme-border)]">
+          <p className="text-sm text-[var(--theme-text-muted)]">Faculties</p>
+          <p className="text-2xl font-bold text-[var(--theme-text)]">{filteredSummaryCounts.faculty}</p>
+        </div>
+        <div className="bg-[var(--theme-panel)] rounded-2xl p-4 border border-[var(--theme-border)]">
+          <p className="text-sm text-[var(--theme-text-muted)]">Staffs</p>
+          <p className="text-2xl font-bold text-[var(--theme-text)]">{filteredSummaryCounts.staff}</p>
+        </div>
+        <div className="bg-[var(--theme-panel)] rounded-2xl p-4 border border-[var(--theme-border)]">
+          <p className="text-sm text-[var(--theme-text-muted)]">Total</p>
+          <p className="text-2xl font-bold text-[var(--theme-text)]">{filteredVerifications.length}</p>
+        </div>
+      </div>
+
       <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-4xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-[var(--theme-border)]">
           <div className="flex flex-wrap gap-3 items-center">
@@ -182,7 +214,7 @@ const NoDuesVerifications = () => {
                   Date
                 </th>
                 <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
-                  Student
+                  User
                 </th>
                 <th className="py-4 px-6 text-sm font-semibold text-[var(--theme-text-muted)]">
                   Status

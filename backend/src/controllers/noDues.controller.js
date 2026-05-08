@@ -11,7 +11,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendNoDuesNotificationEmail = async (student, verification, adminName) => {
+const sendNoDuesNotificationEmail = async (
+  student,
+  verification,
+  adminName,
+) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: process.env.NO_DUES_NOTIFICATION_EMAIL,
@@ -20,7 +24,7 @@ const sendNoDuesNotificationEmail = async (student, verification, adminName) => 
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="border: 2px solid #000; border-radius: 8px; padding: 24px;">
           <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 16px; margin-bottom: 20px;">
-            <h2 style="margin: 0; color: #000;">Inventory Management System</h2>
+            <h2 style="margin: 0; color: #000;">Computer Centre, IIT Patna</h2>
             <h3 style="margin: 8px 0 0; color: #333;">No Dues Certificate</h3>
           </div>
 
@@ -52,7 +56,7 @@ const sendNoDuesNotificationEmail = async (student, verification, adminName) => 
 
           <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #ccc; text-align: center;">
             <p style="color: #888; font-size: 12px; margin: 0;">
-              IMS - Inventory Management System | Generated on ${new Date().toLocaleDateString()}
+              Computer Centre, IIT Patna | Generated on ${new Date().toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -110,9 +114,11 @@ export const verifyNoDues = async (req, res) => {
     const adminName = admin?.fullname || "Admin";
 
     if (process.env.NO_DUES_NOTIFICATION_EMAIL) {
-      sendNoDuesNotificationEmail(student, verification, adminName).catch((err) => {
-        console.error("Failed to send NoDues notification email:", err);
-      });
+      sendNoDuesNotificationEmail(student, verification, adminName).catch(
+        (err) => {
+          console.error("Failed to send NoDues notification email:", err);
+        },
+      );
     }
 
     res.status(201).json({
@@ -148,7 +154,7 @@ export const getNoDuesVerifications = async (req, res) => {
     }
 
     let verifications = await NoDuesVerification.find(query)
-      .populate("student", "fullname instituteEmail")
+      .populate("student", "fullname instituteEmail role")
       .populate("verifiedBy", "fullname")
       .sort({ createdAt: -1 })
       .lean();
@@ -158,7 +164,7 @@ export const getNoDuesVerifications = async (req, res) => {
       verifications = verifications.filter(
         (v) =>
           v.student?.fullname?.toLowerCase().includes(searchLower) ||
-          v.student?.instituteEmail?.toLowerCase().includes(searchLower)
+          v.student?.instituteEmail?.toLowerCase().includes(searchLower),
       );
     }
 
