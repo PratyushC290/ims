@@ -74,15 +74,21 @@ const NoDuesVerifications = () => {
   const handleExport = () => {
     setExporting(true);
     try {
-      const data = filteredVerifications.map((v) => ({
-        Date: v.createdAt ? new Date(v.createdAt).toLocaleString() : "N/A",
-        "Student Name": v.student?.fullname || "Unknown",
-        "Student Email": v.student?.instituteEmail || "N/A",
-        Status: v.status,
-        "Pending Items": v.pendingCount || 0,
-        "Verified By": v.verifiedBy?.fullname || "Unknown",
-        Items: v.itemsAtVerification?.map((i) => `${i.itemName} (${i.identifier})`).join(", ") || "None",
-      }));
+      const data = filteredVerifications.map((v) => {
+        const returnedItems = v.returnedItemsAtVerification?.map((i) => `${i.itemName} (${i.identifier})`).join(", ");
+        const pendingItems = v.itemsAtVerification?.map((i) => `${i.itemName} (${i.identifier})`).join(", ");
+        
+        return {
+          Date: v.createdAt ? new Date(v.createdAt).toLocaleString() : "N/A",
+          "Student Name": v.student?.fullname || "Unknown",
+          "Student Email": v.student?.instituteEmail || "N/A",
+          Status: v.status,
+          "Pending Items": v.pendingCount || 0,
+          "Verified By": v.verifiedBy?.fullname || "Unknown",
+          "Returned Items": returnedItems || "None",
+          "Pending Items": pendingItems || "None",
+        };
+      });
 
       exportToExcel(data, "no_dues_verifications", "Verifications");
       toast.success("Exported successfully!");

@@ -20,6 +20,13 @@ const noDuesVerificationSchema = new Schema(
         status: String,
       },
     ],
+    returnedItemsAtVerification: [
+      {
+        itemName: String,
+        itemId: { type: Schema.Types.ObjectId, ref: "Item" },
+        identifier: String,
+      },
+    ],
     pendingCount: {
       type: Number,
       default: 0,

@@ -65,7 +65,7 @@ const sendNoDuesNotificationEmail = async (student, verification, adminName) => 
 
 export const verifyNoDues = async (req, res) => {
   try {
-    const { studentId } = req.body;
+    const { studentId, returnedItems } = req.body;
 
     const student = await User.findById(studentId);
     if (!student) {
@@ -89,10 +89,17 @@ export const verifyNoDues = async (req, res) => {
       status: item.status,
     }));
 
+    const returnedItemsAtVerification = (returnedItems || []).map((item) => ({
+      itemName: item.catalogItem?.name || item.itemName || "Unknown",
+      itemId: item.catalogItem?._id || item.itemId,
+      identifier: item.identifier,
+    }));
+
     const verification = new NoDuesVerification({
       student: studentId,
       verifiedBy: req.user.userId,
       itemsAtVerification,
+      returnedItemsAtVerification,
       pendingCount: issuedItems.length,
       status: issuedItems.length === 0 ? "Cleared" : "Pending",
     });

@@ -53,10 +53,16 @@ const Login = () => {
         {/* Header Section */}
         <div className="text-center mb-10">
           <div className="mx-auto h-32 w-32 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 overflow-hidden">
-            <img src="/iitp-logo.png" alt="IITP" className="h-28 w-28 object-contain" />
+            <img
+              src="/iitp-logo.png"
+              alt="IITP"
+              className="h-28 w-28 object-contain"
+            />
           </div>
           <h2 className="text-4xl font-bold text-gray-900">
-            {step === 1 ? "IIT Patna CC Office Inventory" : "Enter Security Code"}
+            {step === 1
+              ? "IIT Patna Computer Centre Inventory"
+              : "Enter Security Code"}
           </h2>
         </div>
 

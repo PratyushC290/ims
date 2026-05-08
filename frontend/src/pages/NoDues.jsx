@@ -54,6 +54,22 @@ const NoDues = () => {
       setRecentlyReturnedItems([]);
       const issuedRes = await api.get(`/items/user/${user._id}/issued`);
       setItems(issuedRes.data.issuedAssets || []);
+      
+      try {
+        const verRes = await api.get(`/no-dues/verifications?search=${user.instituteEmail}`);
+        if (verRes.data.verifications?.length > 0) {
+          const latestVerification = verRes.data.verifications[0];
+          if (latestVerification.returnedItemsAtVerification?.length > 0) {
+            setRecentlyReturnedItems(latestVerification.returnedItemsAtVerification.map(item => ({
+              _id: item._id || item.itemId,
+              catalogItem: { name: item.itemName },
+              identifier: item.identifier,
+            })));
+          }
+        }
+      } catch (verError) {
+        console.log("No existing verification found");
+      }
     } catch (error) {
       toast.error("Failed to load student data");
     } finally {
@@ -80,7 +96,15 @@ const NoDues = () => {
   const handleVerifyAndSave = async () => {
     try {
       setReturning("verifying");
-      await api.post("/no-dues/verify", { studentId: student._id });
+      const returnedItems = recentlyReturnedItems.map(item => ({
+        itemName: item.catalogItem?.name,
+        itemId: item.catalogItem?._id,
+        identifier: item.identifier,
+      }));
+      await api.post("/no-dues/verify", { 
+        studentId: student._id,
+        returnedItems
+      });
       toast.success("Verification saved!");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to save verification");
@@ -222,7 +246,7 @@ const NoDues = () => {
                         <tr className="bg-gray-100">
                           <th className="border border-gray-400 p-2 text-left">S.No</th>
                           <th className="border border-gray-400 p-2 text-left">Item Name</th>
-                          <th className="border border-gray-400 p-2 text-left">Identifier</th>
+                          <th className="border border-gray-400 p-2 text-left">Serial No./Model No.</th>
                         </tr>
                       </thead>
                       <tbody>

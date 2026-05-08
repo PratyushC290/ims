@@ -175,7 +175,7 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
         <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
           <p className="text-sm text-amber-400 font-medium">Admin Control</p>
           <p className="text-xs text-[var(--theme-text-muted)] mt-1">
-            You can modify quantities, add extra items, or leave items out. Enter identifiers or leave blank for auto-generation.
+            You can modify quantities, add extra items, or leave items out. Enter serial no./model no. or leave blank for auto-generation.
           </p>
         </div>
 
@@ -275,14 +275,14 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
               {item.quantity > 0 && (
                 <div className="pt-2 border-t border-[var(--theme-border)]">
                   <label className="block text-xs font-medium text-[var(--theme-text-muted)] mb-1">
-                    Serial Numbers (required)
+                    Serial No./Model No. (required)
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {item.identifiers.map((identifier, i) => (
                       <input
                         key={i}
                         type="text"
-                        placeholder={`Serial #${i + 1}`}
+                        placeholder={`Serial/Model #${i + 1}`}
                         value={identifier}
                         onChange={(e) => updateIdentifier(idx, i, e.target.value)}
                         className="w-full px-3 py-2 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-lg text-[var(--theme-text)] text-sm"

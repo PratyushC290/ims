@@ -727,14 +727,14 @@ const Inventory = () => {
 
                     <div className="mt-2 pt-2 border-t border-[var(--theme-border)]">
                       <label className="block text-xs font-medium text-[var(--theme-text-muted)] mb-1">
-                        Serial Numbers (required)
+                        Serial No./Model No. (required)
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         {item.identifiers.map((id, idIndex) => (
                           <input
                             key={idIndex}
                             type="text"
-                            placeholder={`Serial #${idIndex + 1}`}
+                            placeholder={`Serial/Model #${idIndex + 1}`}
                             value={id}
                             onChange={(e) => updateAssignIdentifier(index, idIndex, e.target.value)}
                             className="w-full px-3 py-1.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-lg text-sm"

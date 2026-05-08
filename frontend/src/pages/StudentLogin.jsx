@@ -50,10 +50,16 @@ const StudentLogin = () => {
       <div className="max-w-xl w-full bg-white/60 backdrop-blur-xl rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-14 border border-white/80 transition-all duration-500">
         <div className="text-center mb-10">
           <div className="mx-auto h-32 w-32 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 overflow-hidden">
-            <img src="/iitp-logo.png" alt="IITP" className="h-28 w-28 object-contain" />
+            <img
+              src="/iitp-logo.png"
+              alt="IITP"
+              className="h-28 w-28 object-contain"
+            />
           </div>
           <h2 className="text-4xl font-bold text-gray-900">
-            {step === 1 ? "IIT Patna CC Office Inventory" : "Enter Security Code"}
+            {step === 1
+              ? "IIT Patna Computer Centre Inventory"
+              : "Enter Security Code"}
           </h2>
         </div>
 

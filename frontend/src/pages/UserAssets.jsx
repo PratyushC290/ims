@@ -112,7 +112,7 @@ const UserAssets = () => {
               "Email": user.instituteEmail,
               "Role": user.role,
               "Item Name": item.catalogItem?.name || "Unknown",
-              "Identifier": item.identifier,
+              "Serial No./Model No.": item.identifier,
               "Issue Date": item.issuedAt ? new Date(item.issuedAt).toLocaleDateString() : "",
             });
           });
@@ -122,7 +122,7 @@ const UserAssets = () => {
             "Email": user.instituteEmail,
             "Role": user.role,
             "Item Name": "",
-            "Identifier": "",
+            "Serial No./Model No.": "",
             "Issue Date": "",
           });
         }
@@ -171,7 +171,7 @@ const UserAssets = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--theme-text-muted)]" />
           <input
             type="text"
-            placeholder="Search by name, email, or item identifier..."
+            placeholder="Search by name, email, or item serial no./model no..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500"

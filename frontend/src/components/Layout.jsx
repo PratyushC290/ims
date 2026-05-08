@@ -1,6 +1,20 @@
 // edited by abhiram parupudi 2401cs21
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Sun, Moon, LayoutDashboard, MonitorSmartphone, Users, LogOut, Bell, CheckCheck, History, AlertTriangle, ShoppingCart, FileText, Package } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  LayoutDashboard,
+  MonitorSmartphone,
+  Users,
+  LogOut,
+  Bell,
+  CheckCheck,
+  History,
+  AlertTriangle,
+  ShoppingCart,
+  FileText,
+  Package,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import api from "../api";
@@ -11,8 +25,15 @@ const Layout = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-  const [userProfile, setUserProfile] = useState({ name: "User", initial: "U", email: "", role: "Admin" });
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("app_theme") === "dark");
+  const [userProfile, setUserProfile] = useState({
+    name: "User",
+    initial: "U",
+    email: "",
+    role: "Admin",
+  });
+  const [isDarkMode, setIsDarkMode] = useState(
+    () => localStorage.getItem("app_theme") === "dark",
+  );
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -28,7 +49,10 @@ const Layout = () => {
       document.documentElement.style.setProperty("--theme-text", "#F8FAFC");
       document.documentElement.style.setProperty("--theme-accent", "#3B82F6");
       document.documentElement.style.setProperty("--theme-border", "#334155");
-      document.documentElement.style.setProperty("--theme-text-muted", "#94A3B8");
+      document.documentElement.style.setProperty(
+        "--theme-text-muted",
+        "#94A3B8",
+      );
       localStorage.setItem("app_theme", "dark");
     } else {
       document.documentElement.style.setProperty("--theme-bg", "#F4F7FB");
@@ -36,7 +60,10 @@ const Layout = () => {
       document.documentElement.style.setProperty("--theme-text", "#111827");
       document.documentElement.style.setProperty("--theme-accent", "#3B82F6");
       document.documentElement.style.setProperty("--theme-border", "#E5E7EB");
-      document.documentElement.style.setProperty("--theme-text-muted", "#6B7280");
+      document.documentElement.style.setProperty(
+        "--theme-text-muted",
+        "#6B7280",
+      );
       localStorage.setItem("app_theme", "light");
     }
   }, [isDarkMode]);
@@ -46,24 +73,32 @@ const Layout = () => {
   const navItems = isStudent
     ? []
     : [
-      { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
-      {
-        name: "Inventory",
-        path: "/dashboard/inventory",
-        icon: MonitorSmartphone,
-      },
-      {
-        name: "Return Items",
-        path: "/dashboard/issued-items",
-        icon: Package,
-      },
-      { name: "User Assets", path: "/dashboard/user-assets", icon: Package },
-      { name: "Hardware Requests", path: "/dashboard/requests", icon: ShoppingCart },
-      { name: "Directory", path: "/dashboard/users", icon: Users },
-      { name: "No Dues", path: "/dashboard/no-dues", icon: FileText },
-      { name: "No Dues Records", path: "/dashboard/no-dues-verifications", icon: FileText },
-      { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
-    ];
+        { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
+        {
+          name: "Inventory",
+          path: "/dashboard/inventory",
+          icon: MonitorSmartphone,
+        },
+        {
+          name: "Return Items",
+          path: "/dashboard/issued-items",
+          icon: Package,
+        },
+        { name: "User Assets", path: "/dashboard/user-assets", icon: Package },
+        {
+          name: "Hardware Requests",
+          path: "/dashboard/requests",
+          icon: ShoppingCart,
+        },
+        { name: "Directory", path: "/dashboard/users", icon: Users },
+        { name: "No Dues", path: "/dashboard/no-dues", icon: FileText },
+        {
+          name: "No Dues Records",
+          path: "/dashboard/no-dues-verifications",
+          icon: FileText,
+        },
+        { name: "Audit Logs", path: "/dashboard/audit-logs", icon: History },
+      ];
 
   const handleLogout = () => {
     setConfirmModal({ isOpen: true });
@@ -129,12 +164,14 @@ const Layout = () => {
     try {
       const token = localStorage.getItem("token");
       if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const payload = JSON.parse(atob(token.split(".")[1]));
         setUserProfile({
           name: payload.name || payload.fullname || "Admin",
-          initial: (payload.email || payload.instituteEmail || "U").charAt(0).toUpperCase(),
+          initial: (payload.email || payload.instituteEmail || "U")
+            .charAt(0)
+            .toUpperCase(),
           email: payload.email || payload.instituteEmail || "",
-          role: payload.role || "Admin"
+          role: payload.role || "Admin",
         });
       }
     } catch (e) {
@@ -181,14 +218,18 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] flex transition-colors duration-300">
-
       {/* SIDEBAR - Hidden for students */}
       {!isStudent && (
         <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-[var(--theme-panel)] border-r border-[var(--theme-border)] shadow-sm transition-colors duration-300">
           <div className="p-6 flex items-center gap-3">
-            <img src="/iitp-logo.png" alt="IITP" className="h-10 w-10 rounded-lg object-contain bg-white" />
+            <img
+              src="/iitp-logo.png"
+              alt="IITP"
+              className="h-10 w-10 rounded-lg object-contain bg-white"
+            />
             <h1 className="text-lg font-bold text-[var(--theme-text)] tracking-tight">
-              IIT Patna CC Office
+              IIT Patna <br />
+              Computer Centre
             </h1>
           </div>
 
@@ -201,10 +242,11 @@ const Layout = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${isActive
-                    ? "bg-[var(--theme-bg)] shadow-sm border border-[var(--theme-border)] text-[var(--theme-accent)]"
-                    : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
-                    }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                    isActive
+                      ? "bg-[var(--theme-bg)] shadow-sm border border-[var(--theme-border)] text-[var(--theme-accent)]"
+                      : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
+                  }`}
                 >
                   <Icon
                     className={`h-5 w-5 ${isActive ? "text-[var(--theme-accent)]" : "text-[var(--theme-text-muted)]"}`}
@@ -214,27 +256,34 @@ const Layout = () => {
               );
             })}
           </nav>
-
         </aside>
       )}
 
       {/* MAIN CONTENT WRAPPER */}
-      <main className={`flex-1 flex flex-col min-h-screen ${isStudent ? 'ml-0' : 'ml-64'}`}>
-
+      <main
+        className={`flex-1 flex flex-col min-h-screen ${isStudent ? "ml-0" : "ml-64"}`}
+      >
         {/* TOP HEADER */}
         <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-[var(--theme-panel)] border-b border-[var(--theme-border)] transition-colors duration-300">
           <div className="flex items-center gap-4">
             {(showNotifications || showProfileMenu) && (
               <div
                 className="fixed inset-0 z-40"
-                onClick={() => { setShowNotifications(false); setShowProfileMenu(false); }}
+                onClick={() => {
+                  setShowNotifications(false);
+                  setShowProfileMenu(false);
+                }}
               />
             )}
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
               className="p-2.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-accent)] bg-[var(--theme-bg)] rounded-full border border-[var(--theme-border)] shadow-sm transition-all"
             >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {isDarkMode ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </button>
             {!isStudent && (
               <div className="relative">
@@ -281,8 +330,11 @@ const Layout = () => {
                           {notifications.map((notification) => (
                             <div
                               key={notification._id}
-                              className={`p-4 hover:bg-[var(--theme-bg)] transition-colors ${!notification.isRead ? "bg-[var(--theme-accent)]/10" : ""
-                                }`}
+                              className={`p-4 hover:bg-[var(--theme-bg)] transition-colors ${
+                                !notification.isRead
+                                  ? "bg-[var(--theme-accent)]/10"
+                                  : ""
+                              }`}
                             >
                               <div className="flex gap-3">
                                 <div
@@ -322,8 +374,14 @@ const Layout = () => {
               {showProfileMenu && (
                 <div className="absolute right-0 mt-3 w-56 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="p-4 border-b border-[var(--theme-border)]">
-                    <p className="text-sm font-bold text-[var(--theme-text)] truncate">{userProfile.name}</p>
-                    {userProfile.email && <p className="text-xs text-[var(--theme-text-muted)] truncate mt-0.5">{userProfile.email}</p>}
+                    <p className="text-sm font-bold text-[var(--theme-text)] truncate">
+                      {userProfile.name}
+                    </p>
+                    {userProfile.email && (
+                      <p className="text-xs text-[var(--theme-text-muted)] truncate mt-0.5">
+                        {userProfile.email}
+                      </p>
+                    )}
                   </div>
                   <div className="p-2">
                     <button
@@ -353,8 +411,12 @@ const Layout = () => {
             <div className="mb-4 inline-flex p-3 rounded-2xl bg-red-500/10 text-red-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">Log Out</h2>
-            <p className="text-sm text-[var(--theme-text-muted)] mb-6">Are you sure you want to log out of your session?</p>
+            <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">
+              Log Out
+            </h2>
+            <p className="text-sm text-[var(--theme-text-muted)] mb-6">
+              Are you sure you want to log out of your session?
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmModal({ isOpen: false })}
@@ -372,7 +434,6 @@ const Layout = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
