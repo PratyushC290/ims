@@ -20,6 +20,8 @@ import {
 import api from "../api";
 import toast from "react-hot-toast";
 
+const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16", "#F97316", "#6366F1"];
+
 const Dashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,11 +55,12 @@ const Dashboard = () => {
 
   const { inventoryOverview, userOverview, requestsOverview, recentActivity } = data;
 
-  // Formatting data for the Recharts Donut Chart
-  const chartData = [
-    { name: "Available", value: inventoryOverview.available, color: "#10B981" }, // Emerald 500
-    { name: "Assigned", value: inventoryOverview.assigned, color: "#3B82F6" }, // Blue 500
-  ];
+  // Formatting data for the Recharts Pie Chart (by item type)
+  const chartData = (inventoryOverview.itemDistribution || []).map((item, index) => ({
+    name: item.name,
+    value: item.count,
+    color: item.name === "Others" ? "#9CA3AF" : COLORS[index % COLORS.length],
+  }));
 
   // Helper arrays for mapping UI cards
   const topMetrics = [
