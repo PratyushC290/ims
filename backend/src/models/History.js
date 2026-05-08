@@ -8,6 +8,14 @@ const historySchema = new Schema(
       required: true,
       index: true,
     },
+    itemName: {
+      type: String,
+      required: true,
+    },
+    itemIdentifier: {
+      type: String,
+      required: true,
+    },
     action: {
       type: String,
       enum: [

@@ -29,7 +29,7 @@ const Layout = () => {
     name: "User",
     initial: "U",
     email: "",
-    role: "Admin",
+    role: "",
   });
   const [isDarkMode, setIsDarkMode] = useState(
     () => localStorage.getItem("app_theme") === "dark",
@@ -68,9 +68,9 @@ const Layout = () => {
     }
   }, [isDarkMode]);
 
-  const isStudent = userProfile.role === "Student";
+  const isRegularUser = ["Student", "Faculty", "Staff"].includes(userProfile.role);
 
-  const navItems = isStudent
+  const navItems = isRegularUser
     ? []
     : [
         { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
@@ -166,12 +166,12 @@ const Layout = () => {
       if (token) {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUserProfile({
-          name: payload.name || payload.fullname || "Admin",
+          name: payload.name || payload.fullname || "User",
           initial: (payload.email || payload.instituteEmail || "U")
             .charAt(0)
             .toUpperCase(),
           email: payload.email || payload.instituteEmail || "",
-          role: payload.role || "Admin",
+          role: payload.role || "",
         });
       }
     } catch (e) {
@@ -182,15 +182,18 @@ const Layout = () => {
       await fetchNotifications();
     };
 
-    if (userProfile.role === "Student" && location.pathname === "/dashboard") {
-      navigate("/dashboard/my-portal");
-    }
-
     loadNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Enforce redirection for regular users
+  useEffect(() => {
+    if (isRegularUser && location.pathname.startsWith("/dashboard") && location.pathname !== "/dashboard/my-portal") {
+      navigate("/dashboard/my-portal");
+    }
+  }, [isRegularUser, location.pathname, navigate]);
 
   const markAllAsRead = async () => {
     try {
@@ -218,8 +221,8 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] flex transition-colors duration-300">
-      {/* SIDEBAR - Hidden for students */}
-      {!isStudent && (
+      {/* SIDEBAR - Hidden for regular users (Students/Faculty/Staff) */}
+      {!isRegularUser && (
         <aside className="w-64 fixed inset-y-0 left-0 z-50 flex flex-col bg-[var(--theme-panel)] border-r border-[var(--theme-border)] shadow-sm transition-colors duration-300">
           <div className="p-6 flex items-center gap-3">
             <img
@@ -261,7 +264,7 @@ const Layout = () => {
 
       {/* MAIN CONTENT WRAPPER */}
       <main
-        className={`flex-1 flex flex-col min-h-screen ${isStudent ? "ml-0" : "ml-64"}`}
+        className={`flex-1 flex flex-col min-h-screen ${isRegularUser ? "ml-0" : "ml-64"}`}
       >
         {/* TOP HEADER */}
         <header className="h-20 px-8 flex items-center justify-end sticky top-0 z-40 bg-[var(--theme-panel)] border-b border-[var(--theme-border)] transition-colors duration-300">
@@ -285,7 +288,7 @@ const Layout = () => {
                 <Moon className="h-5 w-5" />
               )}
             </button>
-            {!isStudent && (
+            {!isRegularUser && (
               <div className="relative">
                 <button
                   onClick={() => {

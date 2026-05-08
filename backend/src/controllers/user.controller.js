@@ -33,6 +33,15 @@ export const getAllUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
+
+    // Check if the requester is an admin or is requesting their own data
+    if (
+      req.user.userId !== userId &&
+      !["Admin", "Super Admin"].includes(req.user.role)
+    ) {
+      return res.status(403).json({ message: "Access denied. You can only view your own profile." });
+    }
+
     const user = await User.findById(userId).select("-__v");
 
     if (!user) {
@@ -131,11 +140,36 @@ export const deleteUser = async (req, res) => {
 export const getUserHistory = async (req, res) => {
   try {
     const { userId } = req.params;
-    const history = await History.find({ targetUser: userId })
+
+    // Check if the requester is an admin or is requesting their own history
+    if (
+      req.user.userId !== userId &&
+      !["Admin", "Super Admin"].includes(req.user.role)
+    ) {
+      return res.status(403).json({ message: "Access denied. You can only view your own history." });
+    }
+
+    let history = await History.find({ targetUser: userId })
       .populate("item", "name identifier")
       .populate("authorizedBy", "fullname")
-      .sort({ createdAt: -1 });
-    res.status(200).json({ history });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Auto-patch missing itemName/itemIdentifier for existing records
+    // This fixes "Unknown Asset" for items that still exist in the catalog
+    const patchedHistory = await Promise.all(history.map(async (log) => {
+      if ((!log.itemName || !log.itemIdentifier) && log.item) {
+        const updates = {};
+        if (!log.itemName) updates.itemName = log.item.name;
+        if (!log.itemIdentifier) updates.itemIdentifier = log.notes?.split(" - ")[0] || log.item.identifier || "N/A";
+        
+        await History.updateOne({ _id: log._id }, { $set: updates });
+        return { ...log, ...updates };
+      }
+      return log;
+    }));
+
+    res.status(200).json({ history: patchedHistory });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

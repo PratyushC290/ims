@@ -232,7 +232,11 @@ const sendOtpEmail = async (email, otpCode) => {
 export const requestOtp = async (req, res) => {
   try {
     const { email, loginType } = req.body;
-const user = await User.findOne({ instituteEmail: email });
+    const user = await User.findOne({ instituteEmail: email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found. Please register first." });
+    }
 
     if (user.accountStatus === "Pending") {
       return res.status(403).json({
@@ -246,15 +250,16 @@ const user = await User.findOne({ instituteEmail: email });
         .json({ message: "Your account request was rejected." });
     }
 
-    const allowedRoles = loginType === "student" 
-      ? ["Student", "Faculty", "Staff"] 
-      : ["Admin", "Super Admin"];
+    const isStudentGroup = ["Student", "Faculty", "Staff"].includes(user.role);
+    const isAdminGroup = ["Admin", "Super Admin"].includes(user.role);
+
+    const isAllowed = loginType === "student" ? isStudentGroup : isAdminGroup;
     
-    if (!allowedRoles.includes(user.role)) {
+    if (!isAllowed) {
       return res.status(403).json({
-        message: user.role === "Student" 
-          ? "Please use the student login page." 
-          : "Please use the admin login page.",
+        message: isAdminGroup 
+          ? "Please use the admin login page." 
+          : "Please use the user login page.",
       });
     }
 
@@ -307,6 +312,10 @@ export const verifyOtp = async (req, res) => {
 
     const user = await User.findOne({ instituteEmail: email });
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
     if (user.accountStatus === "Pending") {
       return res.status(403).json({
         message: "Your account is still pending Super Admin approval.",
@@ -319,15 +328,16 @@ export const verifyOtp = async (req, res) => {
         .json({ message: "Your account request was rejected." });
     }
 
-    const allowedRoles = loginType === "student" 
-      ? ["Student", "Faculty", "Staff"] 
-      : ["Admin", "Super Admin"];
+    const isStudentGroup = ["Student", "Faculty", "Staff"].includes(user.role);
+    const isAdminGroup = ["Admin", "Super Admin"].includes(user.role);
+
+    const isAllowed = loginType === "student" ? isStudentGroup : isAdminGroup;
     
-    if (!allowedRoles.includes(user.role)) {
+    if (!isAllowed) {
       return res.status(403).json({
-        message: user.role === "Student" 
-          ? "Please use the student login page." 
-          : "Please use the admin login page.",
+        message: isAdminGroup 
+          ? "Please use the admin login page." 
+          : "Please use the user login page.",
       });
     }
 

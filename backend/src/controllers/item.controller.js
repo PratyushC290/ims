@@ -168,6 +168,8 @@ export const issueAsset = async (req, res) => {
 
     await History.create({
       item: catalogItem._id,
+      itemName: catalogItem.name,
+      itemIdentifier: identifier,
       action: "Issued",
       targetUser: user._id,
       authorizedBy: req.user.userId,
@@ -212,6 +214,8 @@ export const returnAsset = async (req, res) => {
 
     await History.create({
       item: catalogItem._id,
+      itemName: catalogItem.name,
+      itemIdentifier: issuedAsset.identifier,
       action: "Returned",
       targetUser: issuedAsset.user,
       authorizedBy: req.user.userId,
@@ -255,6 +259,8 @@ export const returnAllAssets = async (req, res) => {
 
       await History.create({
         item: issuedAsset.catalogItem._id,
+        itemName: catalogItem ? catalogItem.name : "Deleted Asset",
+        itemIdentifier: issuedAsset.identifier,
         action: "Returned",
         targetUser: issuedAsset.user,
         authorizedBy: req.user.userId,
@@ -347,10 +353,24 @@ export const getItemHistory = async (req, res) => {
 export const deleteItem = async (req, res) => {
   try {
     const { itemId } = req.params;
-    const item = await Item.findByIdAndDelete(itemId);
+    const item = await Item.findById(itemId);
+    
     if (!item) {
       return res.status(404).json({ message: "Item not found." });
     }
+
+    // Preserve item details in history before deletion
+    await History.updateMany(
+      { item: itemId },
+      { 
+        $set: { 
+          itemName: item.name,
+          // If itemIdentifier is missing, we try to use a generic one or leave it to notes
+        } 
+      }
+    );
+
+    await Item.findByIdAndDelete(itemId);
     res.status(200).json({ message: "Item deleted successfully." });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -483,6 +503,8 @@ export const assignAsset = async (req, res) => {
 
       await History.create({
         item: catalogItem._id,
+        itemName: catalogItem.name,
+        itemIdentifier: identifier,
         action: "Assigned",
         targetUser: user._id,
         authorizedBy: req.user.userId,
@@ -588,6 +610,8 @@ export const assignAsset = async (req, res) => {
 
         historyLogs.push({
           item: catalogItem._id,
+          itemName: catalogItem.name,
+          itemIdentifier: identifier,
           action: "Assigned",
           targetUser: user._id,
           authorizedBy: req.user.userId,

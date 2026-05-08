@@ -11,6 +11,7 @@ import {
   Headphones,
   Camera,
   Search,
+  History,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -20,6 +21,7 @@ import PrintableRequest from "../components/PrintableRequest";
 const StudentPortal = () => {
   const [issuedItems, setIssuedItems] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [userProfile, setUserProfile] = useState({});
@@ -58,6 +60,7 @@ const StudentPortal = () => {
 
       if (userId) {
         promises.push(api.get(`/users/${userId}`));
+        promises.push(api.get(`/users/${userId}/history`));
       }
 
       const results = await Promise.all(promises);
@@ -66,6 +69,10 @@ const StudentPortal = () => {
 
       if (userId && results[3]) {
         setFullUser(results[3].data);
+      }
+      
+      if (userId && results[4]) {
+        setHistory(results[4].data.history || []);
       }
 
       const issued = issuedRes.data.issuedAssets || [];
@@ -329,6 +336,89 @@ const StudentPortal = () => {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="mt-8 bg-[var(--theme-panel)] rounded-3xl border border-[var(--theme-border)] p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 bg-blue-600/20 rounded-xl">
+            <History className="h-5 w-5 text-blue-400" />
+          </div>
+          <h2 className="text-xl font-bold text-[var(--theme-text)]">
+            Activity History
+          </h2>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : history.length === 0 ? (
+          <div className="text-center py-12 px-4">
+            <div className="w-16 h-16 mx-auto mb-4 bg-[var(--theme-bg)] rounded-full flex items-center justify-center">
+              <History className="h-8 w-8 text-[var(--theme-text-muted)]" />
+            </div>
+            <p className="text-[var(--theme-text-muted)] font-medium">
+              No activity history yet
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
+            {history.map((log) => (
+              <div
+                key={log._id}
+                className="bg-[var(--theme-bg)] rounded-2xl p-4 border border-[var(--theme-border)] hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10 flex flex-col h-full"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center shrink-0">
+                    {log.action === "Assigned" ? (
+                      <Plus className="h-6 w-6 text-green-400" />
+                    ) : log.action === "Returned" ? (
+                      <History className="h-6 w-6 text-blue-400" />
+                    ) : (
+                      <Package className="h-6 w-6 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-black truncate text-sm">
+                      {log.itemName || log.item?.name || (log.itemIdentifier?.includes("-") ? log.itemIdentifier.split("-")[0] : "Asset")}
+                    </h3>
+                    <p className="text-xs font-black text-black font-mono truncate">
+                      {log.itemIdentifier || log.notes?.split(" - ")[0] || log.item?.identifier || "N/A"}
+                    </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className={`text-[10px] font-bold uppercase ${
+                        log.action === "Assigned" ? "text-green-500" :
+                        log.action === "Returned" ? "text-blue-500" :
+                        "text-gray-500"
+                      }`}>
+                        {log.action}
+                      </span>
+                      <span className="text-[10px] text-[var(--theme-text-muted)] opacity-60 font-medium">
+                        • {new Date(log.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {log.image && (
+                  <div className="mt-auto pt-3">
+                    <div className="rounded-xl overflow-hidden border border-[var(--theme-border)] aspect-video shadow-sm">
+                      <img
+                        src={log.image}
+                        alt="Proof"
+                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <p className="mt-3 text-[10px] text-[var(--theme-text-muted)] opacity-70 border-t border-[var(--theme-border)] pt-2">
+                  Auth: {log.authorizedBy?.fullname?.split(" ")[0] || "System"}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
