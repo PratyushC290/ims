@@ -40,7 +40,7 @@ const NoDues = () => {
   }, []);
 
   const filteredUsers = allUsers.filter(u => 
-    u.role === "Student" && (
+    ["Student", "Faculty", "Staff"].includes(u.role) && (
       !searchTerm ||
       u.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.instituteEmail.toLowerCase().includes(searchTerm.toLowerCase())
@@ -71,7 +71,7 @@ const NoDues = () => {
         console.log("No existing verification found");
       }
     } catch (error) {
-      toast.error("Failed to load student data");
+      toast.error("Failed to load user data");
     } finally {
       setSearching(false);
     }
@@ -139,7 +139,7 @@ const NoDues = () => {
       <div className="mb-8 no-print">
         <h1 className="text-2xl font-bold text-[var(--theme-text)]">No Dues Certificate</h1>
         <p className="text-sm text-[var(--theme-text-muted)] mt-1">
-          Check if a student has any pending items to return
+          Check if a user has any pending items to return
         </p>
       </div>
 
@@ -154,7 +154,7 @@ const NoDues = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--theme-text-muted)]" />
               <input
                 type="text"
-                placeholder="Search by Student Name or Email..."
+                placeholder="Search by User Name or Email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
@@ -166,7 +166,7 @@ const NoDues = () => {
             <div className="max-h-96 overflow-y-auto">
               {filteredUsers.length === 0 ? (
                 <div className="p-8 text-center text-[var(--theme-text-muted)]">
-                  No students found
+                  No users found
                 </div>
               ) : (
                 filteredUsers.map(user => (
@@ -224,7 +224,12 @@ const NoDues = () => {
                   
                   <div className="mb-4">
                     <p className="text-black mb-1"><span className="font-semibold">Name:</span> {student.fullname}</p>
-                    <p className="text-black mb-1"><span className="font-semibold">Roll Number:</span> {student.studentId || "N/A"}</p>
+                    {student.role === "Student" && (
+                      <p className="text-black mb-1"><span className="font-semibold">Roll Number:</span> {student.studentId || "N/A"}</p>
+                    )}
+                    {student.role === "Staff" && (
+                      <p className="text-black mb-1"><span className="font-semibold">Employee ID:</span> {student.employeeId || "N/A"}</p>
+                    )}
                     <p className="text-black mb-1"><span className="font-semibold">Institute Email:</span> {student.instituteEmail}</p>
                     <p className="text-black mb-1"><span className="font-semibold">Department:</span> {student.branch || student.role || "N/A"}</p>
                   </div>
@@ -232,8 +237,8 @@ const NoDues = () => {
 
                 <div className="mb-8">
                   <p className="text-black leading-relaxed text-justify">
-                    This is to certify that <span className="font-semibold">{student.fullname}</span> has returned all issued hardware 
-                    and has no pending dues towards the department. All items assigned to this student have been properly 
+                    This is to certify that <span className="font-semibold">{student.fullname}</span> ({student.role}) has returned all issued hardware 
+                    and has no pending dues towards the department. All items assigned to this user have been properly 
                     accounted for and returned in good condition.
                   </p>
                 </div>
@@ -266,7 +271,7 @@ const NoDues = () => {
                   <div className="text-center flex flex-col items-center justify-end">
                     <div className="h-20"></div>
                     <div className="w-48 border-b-2 border-black mb-2"></div>
-                    <p className="text-black text-sm font-semibold">Signature of Student</p>
+                    <p className="text-black text-sm font-semibold">Signature of {student.role === "Faculty" ? "Faculty" : student.role === "Staff" ? "Employee" : "Student"}</p>
                   </div>
                   <div className="text-center flex flex-col items-center justify-end">
                     <div className="h-20 flex items-end justify-center mb-1 w-full">

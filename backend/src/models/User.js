@@ -38,6 +38,10 @@ const userSchema = new Schema(
       type: String,
       trim: true,
     },
+    employeeId: {
+      type: String,
+      trim: true,
+    },
     branch: {
       type: String,
       trim: true,

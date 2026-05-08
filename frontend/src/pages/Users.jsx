@@ -196,6 +196,10 @@ const Users = () => {
       toast.error("Student ID / Roll Number is required for Students.");
       return;
     }
+    if (editUser.role === "Staff" && !editUser.employeeId) {
+      toast.error("Employee ID is required for Staff.");
+      return;
+    }
     if ((editUser.role === "Student" || editUser.role === "Faculty" || editUser.role === "Staff") && !editUser.branch) {
       toast.error("Department is required for Students, Faculty, and Staff.");
       return;
@@ -227,6 +231,7 @@ const Users = () => {
         updateData.alternativeEmail = editUser.alternativeEmail;
         if (editUser.role === "Staff") {
           updateData.branch = editUser.branch;
+          updateData.employeeId = editUser.employeeId;
         }
       }
 
@@ -251,6 +256,7 @@ const Users = () => {
       role: user.role,
       accountStatus: user.accountStatus,
       studentId: user.studentId || "",
+      employeeId: user.employeeId || "",
       branch: user.branch || "",
       alternativeEmail: user.alternativeEmail || "",
       phdGuide: user.phdGuide || "",
@@ -934,21 +940,35 @@ const Users = () => {
                 {["Admin", "Staff"].includes(editUser.role) && (
                   <>
                     {editUser.role === "Staff" && (
-                      <div>
-                        <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
-                          Department <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={editUser.branch}
-                          onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
-                          className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                        >
-                          <option value="">Select Department</option>
-                          {DEPARTMENTS.map(dept => (
-                            <option key={dept} value={dept}>{dept}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                            Employee ID <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Enter Employee ID"
+                            value={editUser.employeeId}
+                            onChange={(e) => setEditUser({ ...editUser, employeeId: e.target.value })}
+                            className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
+                            Department <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={editUser.branch}
+                            onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
+                            className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          >
+                            <option value="">Select Department</option>
+                            {DEPARTMENTS.map(dept => (
+                              <option key={dept} value={dept}>{dept}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </>
                     )}
                     <div>
                       <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
