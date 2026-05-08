@@ -120,7 +120,7 @@ const RequestModal = ({ isOpen, onClose, onSuccess, userRole = "Student" }) => {
           </div>
           <div className="space-y-3">
             <label className="block text-sm font-medium text-[var(--theme-text)]">
-              Hardware Items Needed
+              Hardware Items Needed <span className="text-red-500">*</span>
             </label>
             {items.map((item, index) => (
               <div key={index} className="flex gap-2 items-start bg-[var(--theme-bg)] p-3 rounded-xl border border-[var(--theme-border)]">
@@ -191,7 +191,7 @@ const RequestModal = ({ isOpen, onClose, onSuccess, userRole = "Student" }) => {
 
           <div>
             <label className="block text-sm font-medium text-[var(--theme-text)] mb-2">
-              Location
+              Location <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -204,7 +204,7 @@ const RequestModal = ({ isOpen, onClose, onSuccess, userRole = "Student" }) => {
 
           <div>
             <label className="block text-sm font-medium text-[var(--theme-text)] mb-2">
-              Reason for Request
+              Reason for Request <span className="text-red-500">*</span>
             </label>
             <textarea
               value={reason}

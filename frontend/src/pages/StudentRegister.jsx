@@ -32,6 +32,7 @@ const StudentRegister = () => {
   });
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const navigate = useNavigate();
 
   const roles = [
@@ -46,6 +47,13 @@ const StudentRegister = () => {
 
   const handleRequestOtp = async (e) => {
     e.preventDefault();
+
+    const emailRegex = /@iitp\.ac\.in$/i;
+    if (!emailRegex.test(formData.instituteEmail)) {
+      setEmailError("Please use your institute email (iitp.ac.in)");
+      return;
+    }
+    setEmailError("");
     
     // Validate based on role
     if (!formData.fullname || !formData.instituteEmail || !formData.phoneNumber || !formData.branch) {
@@ -183,12 +191,25 @@ const StudentRegister = () => {
                 <input
                   type="email"
                   value={formData.instituteEmail}
-                  onChange={(e) => setFormData({ ...formData, instituteEmail: e.target.value })}
-                  placeholder="your.email@institute.edu"
-                  className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm"
+                  onChange={(e) => {
+                    const email = e.target.value;
+                    setFormData({ ...formData, instituteEmail: email });
+                    if (email && !/@iitp\.ac\.in$/i.test(email)) {
+                      setEmailError("Please use your institute email (iitp.ac.in)");
+                    } else {
+                      setEmailError("");
+                    }
+                  }}
+                  placeholder="your.email@iitp.ac.in"
+                  className={`block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all sm:text-sm ${
+                    emailError ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : "border-gray-200/80"
+                  }`}
                   required
                 />
               </div>
+              {emailError && (
+                <p className="mt-1 text-sm text-red-500">{emailError}</p>
+              )}
             </div>
 
             <div>

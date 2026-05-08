@@ -18,12 +18,11 @@ export const signupStudent = async (req, res) => {
       return res.status(400).json({ message: "Invalid role selected." });
     }
 
-    // Role-specific validation
-    if (userRole === "Student" && !studentId) {
-      return res.status(400).json({ message: "Student ID is required for Student registration." });
-    }
-    if (userRole === "Staff" && !employeeId) {
-      return res.status(400).json({ message: "Employee ID is required for Staff registration." });
+    const emailRegex = /@iitp\.ac\.in$/i;
+    if (!emailRegex.test(instituteEmail)) {
+      return res.status(400).json({
+        message: "Please use your institute email (iitp.ac.in) to register.",
+      });
     }
 
     let existingUser = await User.findOne({ instituteEmail });
@@ -74,6 +73,13 @@ export const verifyStudentSignup = async (req, res) => {
     }
 
     const userRole = role || "Student";
+
+    const emailRegex = /@iitp\.ac\.in$/i;
+    if (!emailRegex.test(instituteEmail)) {
+      return res.status(400).json({
+        message: "Please use your institute email (iitp.ac.in) to register.",
+      });
+    }
 
     const validOtp = await Otp.findOne({ email: instituteEmail });
 
