@@ -18,8 +18,11 @@ const PrintableRequest = ({ request, currentUser }) => {
     <div className="bg-white text-black p-8 max-w-4xl mx-auto printable-document">
       {/* Header */}
       <div className="text-center mb-8 border-b-2 border-gray-300 pb-4">
+        <h2 className="text-lg font-bold uppercase tracking-tight mb-1">
+          Computer Center, IIT Patna
+        </h2>
         <h1 className="text-2xl font-bold uppercase tracking-widest mb-2">
-          STUDENT REQUEST
+          HARDWARE REQUEST
         </h1>
         <p className="text-sm font-semibold text-gray-600">
           Request ID: {request._id}
@@ -58,11 +61,13 @@ const PrintableRequest = ({ request, currentUser }) => {
         </h2>
         <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
           <div>
-            <span className="font-semibold inline-block w-40">STUDENT ID:</span>
-            {user.studentId || "N/A"}
+            <span className="font-semibold inline-block w-40">
+              {user.role === "Student" ? "STUDENT ID:" : "EMPLOYEE ID:"}
+            </span>
+            {(user.role === "Student" ? user.studentId : user.employeeId) || "N/A"}
           </div>
           <div>
-            <span className="font-semibold inline-block w-40">STUDENT Name:</span>
+            <span className="font-semibold inline-block w-40">Name:</span>
             {user.fullname || "N/A"}
           </div>
           <div>
@@ -85,10 +90,12 @@ const PrintableRequest = ({ request, currentUser }) => {
             <span className="font-semibold inline-block w-40">Alternative Email:</span>
             {user.alternativeEmail || "N/A"}
           </div>
-          <div>
-            <span className="font-semibold inline-block w-40">PhD Guide Name:</span>
-            {user.phdGuide || "N/A"}
-          </div>
+          {user.role === "Student" && (
+            <div>
+              <span className="font-semibold inline-block w-40">PhD Guide Name:</span>
+              {user.phdGuide || "N/A"}
+            </div>
+          )}
         </div>
       </div>
 
