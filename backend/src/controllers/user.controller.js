@@ -132,7 +132,7 @@ export const getUserHistory = async (req, res) => {
   try {
     const { userId } = req.params;
     const history = await History.find({ targetUser: userId })
-      .populate("item", "identifier")
+      .populate("item", "name identifier")
       .populate("authorizedBy", "fullname")
       .sort({ createdAt: -1 });
     res.status(200).json({ history });

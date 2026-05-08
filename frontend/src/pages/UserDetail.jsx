@@ -207,7 +207,7 @@ const UserDetail = () => {
                         {log.action}
                       </span>
                       <span className="text-sm text-[var(--theme-text-muted)] font-mono">
-                        Asset: {log.item?.identifier || 'Unknown'}
+                        {log.item?.name ? `${log.item.name}${log.notes ? ` (${log.notes.split(' - ')[0] || log.notes})` : ''}` : 'Unknown'}
                       </span>
                       <span className="text-xs text-[var(--theme-text-muted)] opacity-70 mt-1">
                         Authorized by: {log.authorizedBy?.fullname}
