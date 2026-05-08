@@ -23,7 +23,7 @@ const RequestModal = ({ isOpen, onClose, onSuccess, userRole = "Student" }) => {
   };
 
   const allowedItems = getAllowedItems();
-  const isFreeTextRole = ["Staff", "Admin", "Super Admin"].includes(userRole);
+  const isFreeTextRole = ["Admin", "Super Admin"].includes(userRole);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

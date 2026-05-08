@@ -60,8 +60,13 @@ const NoDues = () => {
   const selectStudent = async (user) => {
     try {
       setSearching(true);
-      setStudent(user);
       setRecentlyReturnedItems([]);
+      
+      // Fetch full user details to ensure we have employeeId, studentId etc.
+      const userRes = await api.get(`/users/${user._id}`);
+      const fullUser = userRes.data;
+      setStudent(fullUser);
+      
       const issuedRes = await api.get(`/items/user/${user._id}/issued`);
       setItems(issuedRes.data.issuedAssets || []);
 

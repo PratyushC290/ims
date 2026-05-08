@@ -62,9 +62,9 @@ const PrintableRequest = ({ request, currentUser }) => {
         <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
           <div>
             <span className="font-semibold inline-block w-40">
-              {user.role === "Student" ? "STUDENT ID:" : "EMPLOYEE ID:"}
+              {user.role === "Student" ? "STUDENT ID:" : user.role === "Staff" ? "EMPLOYEE ID:" : "FACULTY ID:"}
             </span>
-            {(user.role === "Student" ? user.studentId : user.employeeId) || "N/A"}
+            {(user.role === "Student" ? user.studentId : user.employeeId) || (user.role === "Staff" ? "N/A" : "N/A")}
           </div>
           <div>
             <span className="font-semibold inline-block w-40">Name:</span>
