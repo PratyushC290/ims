@@ -275,7 +275,7 @@ const FulfillModal = ({ isOpen, onClose, request, onSuccess }) => {
               {item.quantity > 0 && (
                 <div className="pt-2 border-t border-[var(--theme-border)]">
                   <label className="block text-xs font-medium text-[var(--theme-text-muted)] mb-1">
-                    Serial No./Model No. (required)
+                    Serial No./Model No. (required) <span className="text-red-500">*(Case Sensitive)</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {item.identifiers.map((identifier, i) => (
