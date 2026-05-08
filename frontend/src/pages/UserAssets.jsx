@@ -3,7 +3,7 @@ import { Users as UsersIcon, Package, Loader2, Search, Download, Filter, User, X
 import toast from "react-hot-toast";
 import api from "../api";
 import { exportToExcel } from "../utils/exportUtils";
-
+import { DEPARTMENTS } from "../utils/constants";
 const UserAssets = () => {
   const [users, setUsers] = useState([]);
   const [issuedAssets, setIssuedAssets] = useState([]);
@@ -18,19 +18,6 @@ const UserAssets = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [expandedUser, setExpandedUser] = useState(null);
   const [departmentFilter, setDepartmentFilter] = useState("All");
-
-  const DEPARTMENTS = [
-    "Chemical & Biochemical Engineering",
-    "Chemistry",
-    "Civil & Environmental Engineering",
-    "Computer Science and Engineering",
-    "Electrical Engineering",
-    "Humanities & Social Sciences",
-    "Mathematics",
-    "Mechanical Engineering",
-    "Metallurgical and Materials Engineering",
-    "Physics"
-  ];
 
   useEffect(() => {
     fetchData();

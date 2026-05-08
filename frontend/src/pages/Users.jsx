@@ -21,18 +21,7 @@ import api from "../api";
 import { exportUsersToExcel, importUsersFromExcel } from "../utils/exportUtils";
 import { useDebounce } from "../hooks/useDebounce";
 
-const DEPARTMENTS = [
-  "Chemical & Biochemical Engineering",
-  "Chemistry",
-  "Civil & Environmental Engineering",
-  "Computer Science and Engineering",
-  "Electrical Engineering",
-  "Humanities & Social Sciences",
-  "Mathematics",
-  "Mechanical Engineering",
-  "Metallurgical and Materials Engineering",
-  "Physics"
-];
+import { DEPARTMENTS, STUDENT_DEPARTMENTS } from "../utils/constants";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -636,7 +625,7 @@ const Users = () => {
                         className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                       >
                         <option value="">Select Department</option>
-                        {DEPARTMENTS.map(dept => (
+                        {STUDENT_DEPARTMENTS.map(dept => (
                           <option key={dept} value={dept}>{dept}</option>
                         ))}
                       </select>
@@ -709,14 +698,16 @@ const Users = () => {
                         <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
                           Department <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. IT Department"
+                        <select
                           value={newUser.branch}
                           onChange={(e) => setNewUser({ ...newUser, branch: e.target.value })}
                           className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                        />
+                        >
+                          <option value="">Select Department</option>
+                          {DEPARTMENTS.map(dept => (
+                            <option key={dept} value={dept}>{dept}</option>
+                          ))}
+                        </select>
                       </div>
                     )}
                     <div>
@@ -874,7 +865,7 @@ const Users = () => {
                         className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                       >
                         <option value="">Select Department</option>
-                        {DEPARTMENTS.map(dept => (
+                        {STUDENT_DEPARTMENTS.map(dept => (
                           <option key={dept} value={dept}>{dept}</option>
                         ))}
                       </select>
@@ -947,14 +938,16 @@ const Users = () => {
                         <label className="block text-sm font-medium text-[var(--theme-text-muted)] mb-1">
                           Department <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. IT Department"
+                        <select
                           value={editUser.branch}
                           onChange={(e) => setEditUser({ ...editUser, branch: e.target.value })}
                           className="block w-full py-3 px-4 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-[var(--theme-text)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                        />
+                        >
+                          <option value="">Select Department</option>
+                          {DEPARTMENTS.map(dept => (
+                            <option key={dept} value={dept}>{dept}</option>
+                          ))}
+                        </select>
                       </div>
                     )}
                     <div>
